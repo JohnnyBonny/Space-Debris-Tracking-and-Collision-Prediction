@@ -1,2 +1,100 @@
-1. grab all the TLE files for the debris and active satellites
-2.
+1. grab all the TLE files for the debris and active satellites(1)
+  -understand what each of the categories means
+
+
+2.Understanding Orbital Mechanics
+-----
+  (This section is the things ive learned(25-27))
+  -perigee(2): the point closets to the object it is rotating
+  -Apogee(2):  the point farthest to the object it is rotating
+
+  -2 body problem: Assumes that 2 bodies exist(one small and one big)(3)
+    -central body is round(like the earth)
+    -mass of central body is distributed evenly
+    -the large body only influnces the small body, and the small body does not influnce the big body
+    -inertial frame, the axis, is in the middle of the large body
+
+  -Newton's Universal Law of Gravitation(3): 
+  Force of gravity on the small body 
+  =
+  (mass of the large body x mass of the small body x Gravitational constant) /(the distance geometric center to the small object)^2
+
+  mass of the large body x Gravitational constant = mew
+
+  can be rewritten as:
+
+  Force of gravity on the small body 
+  = mew/ disance between geometric center of the big object and the small object
+
+
+  Force is also:
+  F = mass x acceleration
+
+  so the acceleration of the small object can be calcuated as the:
+  acceleration = mew/ disance between geometric center of the big object and the small object
+
+  - ODE:
+    the relationship of a function that can be derived by another function.
+
+    example 1: 
+    if we know the position relative to time. we can take the derivative of that and get the velocity.
+
+    Once we know the Velocity, we can take the derivative of that and get the Acceleration
+
+    thus from position, we know the velocity and acceleration
+
+    - Euler's method is an example of how we can find the solution of an ode by finding the derivative of some parts of curve and then connecting them.
+
+    -Things to consider when creating simulations:
+    Permutations(6): in short, 
+    • Drag
+    • Non-spherical Earth
+    • Lunar Gravity
+    • Solar Radiation
+    • Tidal Effects
+
+    all affect how an object orbits
+---------------------------------------------------------------------------------
+
+
+
+3. apply orbital mechanics to the TLE data
+--------
+  -Calculate orbital period (T) in seconds (where n is mean motion) (4): T=24.0∗3600.0 / n
+
+
+  -Calculate the semi-major axis:
+
+    -got plantary data from this git: 
+      https://github.com/alfonsogonzalez/AWP/blob/main/docs/planetary_data.js
+
+  -Calculate the eccentric anomaly by using the mean anomaly:
+
+  -After calculating the eccentric anomaly, we will now be able to calculate the true anomaly
+
+----------
+(This section is the things ive learned(25-27))
+ - Figure out how I can get the TLE data to the code editor
+ - On Once I have the data, figure out a way to parse the data
+ - Once the data has been parse figure out ways i can get the positional and velocity vectors of the object
+  -in Order to do this I will need to get the Classical Orbital Elements, from this i will be able to find the vectors for the position and velocity(7. READ THIS LATER).
+    - 
+
+
+4. plot the data
+
+5. evaluate the data
+
+6.Predict if there will be a collision with all the objects within the next 10(days, weeks,months...)
+  -method for doing so:
+
+7. 
+
+Sources:
+(1)(Source: https://celestrak.org/NORAD/elements/)
+(2)(Source: https://www.youtube.com/watch?v=Am7EwmxBAW8)
+(3)(Source:https://www.youtube.com/watch?v=nJ_f1h49jfM)
+(4)(Source:https://space.stackexchange.com/questions/25958/how-can-i-plot-a-satellites-orbit-in-3d-from-a-tle-using-python-and-skyfield)
+(5)(Source:https://www.youtube.com/watch?v=NQTtFrhSNDk)
+(6)(Source: https://control.asu.edu/Classes/MAE462/462Lecture12.pdf)
+(7)(Source: https://orbital-mechanics.space/classical-orbital-elements/orbital-elements-and-the-state-vector.html )
