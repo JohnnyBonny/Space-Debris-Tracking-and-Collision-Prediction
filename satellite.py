@@ -16,9 +16,9 @@ def validate_date(start_date:datetime, end_date:datetime,steps:int):
   else:
     return False
 
-def get_TLE_Data(is_file,url, file_name):
+def get_TLE_Data(is_file,source):
   if is_file == False:
-    response = requests.get(url)
+    response = requests.get(source)
     if response.status_code == 200:
       print("request successful")
       return response.text.strip().splitlines()
@@ -26,21 +26,23 @@ def get_TLE_Data(is_file,url, file_name):
         print(f'The request from the url can not be met. Error {response.status_code}')
 
   else: 
-    with open(file_name,'r') as file:
+    with open(source,'r') as file:
       content = file.read()
       return content.strip().splitlines()
 
-  
 
 class satellite:
-  def __init__(self, url,file ,is_file:bool):
-    self.url = url
+  def __init__(self, source,is_file:bool,track_time:bool):
+    self.source = source
     self.name = ""
     self.x_position = []
     self.y_position = []
     self.z_position = []
-    self.file = file
     self.is_file = is_file
+    self.times = []
+
+    #we only need to make 1 sat track the time since the simulation are all done at the sametime
+    self.track_time =track_time
 
 
   '''
@@ -51,8 +53,8 @@ class satellite:
       self.verify = True
   '''
     
-  def get_url(self):
-    return self.url
+  def get_source(self):
+    return self.source
   
   def get_name(self):
     return self.name
@@ -74,7 +76,7 @@ class satellite:
     #check if the simulation dates are valid
     if validate_date(start_date, end_date, steps):
 
-      tle_data = get_TLE_Data(is_file=self.is_file,url="",file_name=self.file)
+      tle_data = get_TLE_Data(is_file=self.is_file,source=self.source)
       
       # Example: Parse the TLE
       if self.name == "":
@@ -89,6 +91,9 @@ class satellite:
       future_time = (start_date + datetime.timedelta(weeks=steps[0], days=steps[1], hours=steps[2], minutes=steps[3], seconds=steps[4]))
       
       while future_time < end_date:
+        if self.track_time:
+          self.times.append(future_time)
+          
         jd, fr = jday(future_time.year, future_time.month, future_time.day, future_time.hour, future_time.minute, future_time.second)
         
         e, r, v = satellite_info.sgp4(jd, fr) # can delete the v(velocity) if not needed

@@ -21,8 +21,11 @@ def update_data(frames,satellites: satellite, lines):
     lines[index].set_data(x_positions[start_index:end_index],y_positions[start_index:end_index])
     lines[index].set_3d_properties(z_positions[start_index:end_index])  # Set the Z data for 3D
 
+  #calculate the closest two lines were to each other
+    #if the distance is within the tolorance or less than the closest distance
+      #update the closest distance variable and update the date it happened(and collison warning if needed) 
   
-  return lines[0],lines[1],
+  return lines,
 
 def main():
   url = 'https://celestrak.org/NORAD/elements/gp.php?CATNR=33853&FORMAT=tle'
@@ -31,10 +34,10 @@ def main():
   url2 = 'https://celestrak.org/NORAD/elements/gp.php?CATNR=61219&FORMAT=tle' 
   file2 ='Data/TLE data/Cosmos 2251 deb.txt'
 
-  Iridium_deb = satellite(url,file,True)
+  Iridium_deb = satellite(file,is_file=True,track_time=True)
 
-
-  STARLINK_32248 = satellite(url2,file2,True) # STARLINK WILL NOT WORK BECAUSE THE STARLINK DID NOT EXIST IN THE BEGINNING OF THE YEAR
+  # STARLINK WILL NOT WORK BECAUSE THE STARLINK DID NOT EXIST IN THE BEGINNING OF THE YEAR    
+  STARLINK_32248 = satellite(file2,is_file=False,track_time=False) 
 
   start_year = 2024
   start_month = 1
@@ -54,7 +57,6 @@ def main():
 
   STARLINK_32248.get_coordinates(start_date,end_date,steps)
   
-
   fig = plt.figure()
    
   # add subplot with projection='3d'
