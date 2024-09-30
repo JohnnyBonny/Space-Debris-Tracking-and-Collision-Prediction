@@ -8,22 +8,55 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+start_year = 2024
+start_month = 1
+start_day = 1
+
+end_year = 2024
+end_month = 9
+end_day = 29
+
+closest_distance_value = float('inf')
+closest_distance_time = datetime.datetime(start_year, start_month, start_day)
+
 #updates the frame of the animation to only show 3 points at a time
-def update_data(frames,satellites: satellite, lines):
+def update_data(frames,satellites, lines, tolerance):
   start_index = max(0,frames-2) # we want to make sure that we do not accidently go over the coordinates list
   end_index = frames + 1
 
-  
+  global closest_distance_value
+  global closest_distance_time
+
+  points = []
   for index,satellite in enumerate(satellites):
     x_positions = satellite.get_x_position()
     y_positions = satellite.get_y_position()
     z_positions = satellite.get_z_position()
+    
     lines[index].set_data(x_positions[start_index:end_index],y_positions[start_index:end_index])
     lines[index].set_3d_properties(z_positions[start_index:end_index])  # Set the Z data for 3D
+    points.append(np.array([x_positions[end_index], y_positions[end_index], z_positions[end_index]]))
+
+  for x in range(len(points)):
+    for y in range(x+1,len(points)):
+      distance = abs(np.linalg.norm(points[y] - points[x]))
+      if distance < closest_distance_value:
+        if distance < tolerance:
+          print("WARNING! WITHIN TOLERANCE ZONE!")
+        closest_distance_value = distance
+        closest_distance_time = satellites[0].get_times()[end_index]
+
+        print(f'The closest distance between the two objects is {closest_distance_value}km')
+        print(f'This occured on {closest_distance_time}')
+        
+
+
 
   #calculate the closest two lines were to each other
+
     #if the distance is within the tolorance or less than the closest distance
       #update the closest distance variable and update the date it happened(and collison warning if needed) 
+      #closet_date = satellite[0].get_times()[end_index]
   
   return lines,
 
@@ -34,18 +67,11 @@ def main():
   url2 = 'https://celestrak.org/NORAD/elements/gp.php?CATNR=61219&FORMAT=tle' 
   file2 ='Data/TLE data/Cosmos 2251 deb.txt'
 
-  Iridium_deb = satellite(file,is_file=True,track_time=True)
+  Iridium_deb = satellite(file,is_file=True,track_time=True) #we only need to track the time of 1 sat
 
   # STARLINK WILL NOT WORK BECAUSE THE STARLINK DID NOT EXIST IN THE BEGINNING OF THE YEAR    
-  STARLINK_32248 = satellite(file2,is_file=False,track_time=False) 
+  STARLINK_32248 = satellite(file2,is_file=True,track_time=False) 
 
-  start_year = 2024
-  start_month = 1
-  start_day = 1
-
-  end_year = 2024
-  end_month = 9
-  end_day = 29
 
   start_date = datetime.datetime(start_year,start_month,start_day)
   end_date = datetime.datetime(end_year,end_month,end_day)
@@ -71,7 +97,9 @@ def main():
   satellites = [Iridium_deb,STARLINK_32248]
   lines = [Iridium_deb_line,STARLINK_32248_line]
 
-  animation = FuncAnimation(fig=fig,func=update_data,frames=len(Iridium_deb.get_x_position()),interval=10,fargs=(satellites,lines,))
+  tolerance = 100 #km
+
+  animation = FuncAnimation(fig=fig,func=update_data,frames=len(Iridium_deb.get_x_position()),interval=10,fargs=(satellites,lines,tolerance,))
 
 
   # Plot the Earth as a blue sphere

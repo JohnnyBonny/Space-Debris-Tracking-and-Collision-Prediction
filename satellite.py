@@ -68,6 +68,9 @@ class satellite:
   def get_z_position(self):
     return self.z_position
   
+  def get_times(self):
+    return self.times
+  
   
   #will update the array values of x,y,z
   #steps will take list: [weeks, days, hours, minutes, seconds]
@@ -93,7 +96,7 @@ class satellite:
       while future_time < end_date:
         if self.track_time:
           self.times.append(future_time)
-          
+
         jd, fr = jday(future_time.year, future_time.month, future_time.day, future_time.hour, future_time.minute, future_time.second)
         
         e, r, v = satellite_info.sgp4(jd, fr) # can delete the v(velocity) if not needed
