@@ -59,7 +59,7 @@ class satellite:
       
   #will update the array values of x,y,z
   #steps will take list: [weeks, days, hours, minutes, seconds]
-  def get_coordinates(self,start_date:datetime, end_date:datetime,steps:list[int]):
+  def get_coordinates_man(self,start_date:datetime, end_date:datetime,steps:list[int]):
     tle_data = self._get_TLE_Data(is_file=self.is_file,source=self.source)
     
     # Example: Parse the TLE
@@ -91,6 +91,44 @@ class satellite:
       future_time = (start_date + datetime.timedelta(weeks=steps[0], days=steps[1], hours=steps[2], minutes=steps[3], seconds=steps[4]))
 
     print("We good")
+
+  #ONLY USE THIS IF YOU ARE USING POPULATE_SAT() IN SIMULATION FILE!
+  #will update the array values of x,y,z
+  #steps will take list: [weeks, days, hours, minutes, seconds]
+  def get_coordinates_auto(self,start_date:datetime, end_date:datetime,steps:list[int],response, i):
+    tle_data = response
+    
+    # Example: Parse the TLE
+    if self.name == "":
+      self.name = tle_data[i].rstrip()
+
+    satellite_line1 = tle_data[i+1]
+    satellite_line2 = tle_data[i+2]
+
+    satellite_info = Satrec.twoline2rv(satellite_line1, satellite_line2)
+    
+    #Now we will convert the dates
+    future_time = (start_date + datetime.timedelta(weeks=steps[0], days=steps[1], hours=steps[2], minutes=steps[3], seconds=steps[4]))
+    
+    while future_time < end_date:
+      if self.track_time:
+        self.times.append(future_time)
+
+      jd, fr = jday(future_time.year, future_time.month, future_time.day, future_time.hour, future_time.minute, future_time.second)
+      
+      e, r, v = satellite_info.sgp4(jd, fr) # can delete the v(velocity) if not needed
+
+      # Append position data
+      self.x_position.append(r[0])
+      self.y_position.append(r[1])
+      self.z_position.append(r[2])
+
+      start_date = future_time
+      future_time = (start_date + datetime.timedelta(weeks=steps[0], days=steps[1], hours=steps[2], minutes=steps[3], seconds=steps[4]))
+
+    print(f"We good {i/3}")
+
+
     
 
 
