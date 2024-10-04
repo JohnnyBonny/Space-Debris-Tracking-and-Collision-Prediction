@@ -1,0 +1,138 @@
+Metadata-Version: 2.1
+Name: TLE-tools
+Version: 0.2.3
+Summary: Library to work with two-line element set files
+Home-page: https://federicostra.github.io/tletools
+Author: Federico Stra
+Author-email: stra.federico@gmail.com
+License: MIT
+Project-URL: Documentation, https://tletools.readthedocs.io
+Project-URL: Code, https://github.com/FedericoStra/tletools
+Project-URL: Issue tracker, https://github.com/FedericoStra/tletools/issues
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Framework :: IPython
+Classifier: Framework :: Jupyter
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Education
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Natural Language :: English
+Classifier: Operating System :: Unix
+Classifier: Operating System :: POSIX
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Programming Language :: Python :: Implementation :: PyPy
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Scientific/Engineering :: Visualization
+Requires-Python: >=3.4
+Description-Content-Type: text/markdown
+Requires-Dist: attrs (>=19.0.0)
+Requires-Dist: numpy (>=1.16.0)
+Requires-Dist: pandas (>=0.24.0)
+Requires-Dist: astropy (>=3.2.0)
+Requires-Dist: poliastro (>=0.14.0)
+Provides-Extra: dev
+Requires-Dist: pytest ; extra == 'dev'
+Requires-Dist: coverage ; extra == 'dev'
+Requires-Dist: tox ; extra == 'dev'
+Requires-Dist: sphinx ; extra == 'dev'
+Requires-Dist: pallets-sphinx-themes ; extra == 'dev'
+Requires-Dist: sphinxcontrib-log-cabinet ; extra == 'dev'
+Requires-Dist: sphinx-issues ; extra == 'dev'
+Provides-Extra: docs
+Requires-Dist: sphinx ; extra == 'docs'
+Requires-Dist: sphinx-rtd-theme ; extra == 'docs'
+
+# TLE-tools
+
+![PyPI](https://img.shields.io/pypi/v/TLE-tools)
+![PyPI - License](https://img.shields.io/pypi/l/TLE-tools)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/TLE-tools)
+![PyPI - Wheel](https://img.shields.io/pypi/wheel/TLE-tools)
+
+`TLE-tools` is a small library to work with [two-line element
+set](https://en.wikipedia.org/wiki/Two-line_element_set) files.
+
+## Purpose
+
+The purpose of the library is to parse TLE sets into convenient `TLE` objects,
+load entire TLE set files into `pandas.DataFrame`'s, convert `TLE` objects into
+`poliastro.twobody.Orbit`'s, and more.
+
+From [Wikipedia](https://en.wikipedia.org/wiki/Two-line_element_set):
+
+> A two-line element set (TLE) is a data format encoding a list of orbital
+elements of an Earth-orbiting object for a given point in time, the epoch.
+The TLE data representation is specific to the [simplified perturbations
+models](https://en.wikipedia.org/wiki/Simplified_perturbations_models) (SGP,
+SGP4, SDP4, SGP8 and SDP8), so any algorithm using a TLE as a data source must
+implement one of the SGP models to correctly compute the state at a time of
+interest. TLEs can describe the trajectories only of Earth-orbiting objects.
+
+Example:
+
+```
+ISS (ZARYA)
+1 25544U 98067A   19249.04864348  .00001909  00000-0  40858-4 0  9990
+2 25544  51.6464 320.1755 0007999  10.9066  53.2893 15.50437522187805
+```
+
+Here is a minimal example on how to load the previous TLE:
+
+```python
+from tletools import TLE
+
+tle_string = """
+ISS (ZARYA)
+1 25544U 98067A   19249.04864348  .00001909  00000-0  40858-4 0  9990
+2 25544  51.6464 320.1755 0007999  10.9066  53.2893 15.50437522187805
+"""
+
+tle_lines = tle_string.strip().splitlines()
+
+tle = TLE.from_lines(*tle_lines)
+```
+
+Then `tle` is:
+
+```python
+TLE(name='ISS (ZARYA)', norad='25544', classification='U', int_desig='98067A',
+epoch_year=2019, epoch_day=249.04864348, dn_o2=1.909e-05, ddn_o6=0.0, bstar=4.0858e-05,
+set_num=999, inc=51.6464, raan=320.1755, ecc=0.0007999, argp=10.9066, M=53.2893,
+n=15.50437522, rev_num=18780)
+```
+
+and you can then access its attributes like `t.argp`, `t.epoch`...
+
+### TLE format specification
+
+Some more or less complete TLE format specifications can be found on the following websites:
+
+- [Wikipedia](https://en.wikipedia.org/wiki/Two-line_element_set#Format)
+- [NASA](https://spaceflight.nasa.gov/realdata/sightings/SSapplications/Post/JavaSSOP/SSOP_Help/tle_def.html)
+- [CelesTrak](https://celestrak.com/columns/v04n03/)
+- [Space-Track](https://www.space-track.org/documentation#tle)
+
+## Installation
+
+Install and update using [pip](https://pip.pypa.io/en/stable/):
+```bash
+pip install -U TLE-tools
+```
+
+## Links
+
+- Website: https://federicostra.github.io/tletools
+- Documentation: https://tletools.readthedocs.io
+- Releases: https://pypi.org/project/TLE-tools
+- Code: https://github.com/FedericoStra/tletools
+- Issue tracker: https://github.com/FedericoStra/tletools/issues
+
+
