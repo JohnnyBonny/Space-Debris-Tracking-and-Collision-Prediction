@@ -80,7 +80,7 @@ class satellite:
 
       jd, fr = jday(future_time.year, future_time.month, future_time.day, future_time.hour, future_time.minute, future_time.second)
       
-      e, r, v = satellite_info.sgp4(jd, fr) # can delete the v(velocity) if not needed
+      e, r, v = satellite_info.sgp4(jd, fr)
 
       # Append position data
       self.x_position.append(r[0])
