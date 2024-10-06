@@ -35,8 +35,8 @@ def example1():
 
   satellites = [Iridium_deb,Cosmos_deb,Sat_174E,CALSPHERE_1]
 
-  #steps =  [weeks, days, hours, minutes, seconds]
-  steps = [0,0,0,3,0] #this will get coordinates every 3 mins in the simulation
+  #increments =  [weeks, days, hours, minutes, seconds]
+  increments = [0,0,0,3,0] #this will get coordinates every 3 mins in the simulation
 
   playback_speed = 2 #each frame will update every 5 ms
 
@@ -44,30 +44,21 @@ def example1():
   start_month = 9
   start_day = 30
 
-  end_year = 2025
+  end_year = 2024
   end_month = 10
   end_day = 1
 
   start_date = datetime(start_year,start_month,start_day, tzinfo=timezone.utc)
   end_date = datetime(end_year,end_month,end_day, tzinfo=timezone.utc)
 
-  tolerance_zone = 30
+  tolerance_zone = 100
   repeat = False
   collision_zone = 5
 
-  sim  = simulation.simulation(satellites,tolerance_zone,collision_zone,start_date,end_date,steps,playback_speed,repeat)
+  sim  = simulation.simulation(satellites,tolerance_zone,collision_zone,start_date,end_date,increments,playback_speed,repeat)
 
   sim.start_simulation_no_plot()
-  
-  print(f'Result: Closest distance was {sim.get_closest_distance_value()}km, and it happened on {sim.get_closest_distance_time()}UTC')
-
-  print(f'{sim.get_sat1_name()} Coordinates: {sim.get_sat1_coordinates()}')
-  print(f'{sim.get_sat2_name()} Coordinates: {sim.get_sat2_coordinates()}')
-  print("\n\"Note that the SGP4 propagator returns raw x,y,z Cartesian coordinates in a “True Equator Mean Equinox” (TEME) reference frame that’s centered on the Earth but does not rotate with it — an “Earth centered inertial” (ECI) reference frame. raw x,y,z Cartesian coordinates in a “True Equator Mean Equinox” (TEME) reference frame that’s centered on the Earth but does not rotate with it — an “Earth centered inertial” (ECI) reference frame.\"")
-  print("Source: https://pypi.org/project/sgp4/")
-  
-  
-
+  sim.print_info()
   sim.start_simulation_plot()
 
 #sample on how sim from a url with many satellites
@@ -82,36 +73,28 @@ def example2():
 
   end_year = 2024
   end_month = 10
-  end_day = 10
+  end_day = 5
 
   start_date = datetime(start_year,start_month,start_day, tzinfo=timezone.utc)
   end_date = datetime(end_year,end_month,end_day, tzinfo=timezone.utc)
 
-  #steps =  [weeks, days, hours, minutes, seconds]
-  steps = [0,0,0,3,0] #this will get coordinates every 3 mins
+  #increments =  [weeks, days, hours, minutes, seconds]
+  increments = [0,0,0,3,0] #this will get coordinates every 3 mins
   playback_speed = 5 #frames will update every 5 ms
   repeat = False #repeat the simulation when completed
-  tolerance_zone = 30  #Warning message if two satellites are closer than this value(km)
+  tolerance_zone = 100  #Warning message if two satellites are closer than this value(km)
   collision_zone = 5 #Collision message if two satellites are closer than this value(km)
   repeat = False
 
   #initializing the simulation
-  sim  = simulation.simulation([],tolerance_zone,collision_zone,start_date,end_date,steps,playback_speed,repeat)
+  sim  = simulation.simulation([],tolerance_zone,collision_zone,start_date,end_date,increments,playback_speed,repeat)
 
-  sim.populate_satellites(url,50) # this will grab
+  sim.populate_satellites(url,50) # this will grab 50 satellites from the url
 
   sim.start_simulation_no_plot()
 
-  #if i want the values for methods, I need first run start_simulation_no_plot()
-  print(f'Result: Closest distance was {sim.get_closest_distance_value()}km, and it happened on {sim.get_closest_distance_time()}UTC')
-
-  print(f'{sim.get_sat1_name()} Coordinates: {sim.get_sat1_coordinates()}')
-  print(f'{sim.get_sat2_name()} Coordinates: {sim.get_sat2_coordinates()}')
-  print("\n\"Note that the SGP4 propagator returns raw x,y,z Cartesian coordinates in a “True Equator Mean Equinox” (TEME) reference frame that’s centered on the Earth but does not rotate with it — an “Earth centered inertial” (ECI) reference frame. raw x,y,z Cartesian coordinates in a “True Equator Mean Equinox” (TEME) reference frame that’s centered on the Earth but does not rotate with it — an “Earth centered inertial” (ECI) reference frame.\"")
-  print("Source: https://pypi.org/project/sgp4/")
-
-
-  sim.start_simulation_plot()
+  sim.print_info()
+  #sim.start_simulation_plot()
 
 #sample of what happens if satellites collides
 def example3():
@@ -122,8 +105,8 @@ def example3():
 
   satellites = [Cosmos_sat,Iridium_sat]
 
-  #steps =  [weeks, days, hours, minutes, seconds]
-  steps = [0,1,1,2,0] #this will get coordinates every 28 sec in the simulation
+  #increments =  [weeks, days, hours, minutes, seconds]
+  increments = [0,1,1,2,0] #this will get coordinates every 28 sec in the simulation
 
   playback_speed = 0 #each frame will update every 2 ms
 
@@ -143,27 +126,81 @@ def example3():
   repeat = False
 
   #initializing the simulation
-  sim  = simulation.simulation(satellites,tolerance_zone,collision_zone,start_date,end_date,steps,playback_speed,repeat)
+  sim  = simulation.simulation(satellites,tolerance_zone,collision_zone,start_date,end_date,increments,playback_speed,repeat)
   
   
   sim.start_simulation_no_plot()
   
-  print(f'Result: Closest distance was {sim.get_closest_distance_value()}km, and it happened on {sim.get_closest_distance_time()}UTC')
 
-  print(f'{sim.get_sat1_name()} Coordinates: {sim.get_sat1_coordinates()}')
-  print(f'{sim.get_sat2_name()} Coordinates: {sim.get_sat2_coordinates()}')
-  print("\n\"Note that the SGP4 propagator returns raw x,y,z Cartesian coordinates in a “True Equator Mean Equinox” (TEME) reference frame that’s centered on the Earth but does not rotate with it — an “Earth centered inertial” (ECI) reference frame. raw x,y,z Cartesian coordinates in a “True Equator Mean Equinox” (TEME) reference frame that’s centered on the Earth but does not rotate with it — an “Earth centered inertial” (ECI) reference frame.\"")
-  print("Source: https://pypi.org/project/sgp4/")
-  if len(sim.get_collision_dates()) > 0:
-    print("Collision information:")
-    print(f" the coordinates are: {sim.get_collision_coordinates()}")
-    print(f"the dates are: {sim.get_collision_dates()}")
-    print(f"the names of the satellites are:{sim.get_collision_sates_names()}")
+  #sim.start_simulation_plot()
+
+#for slides
+def example4():
+  Iridium_url = 'https://celestrak.org/NORAD/elements/gp.php?CATNR=33853&FORMAT=tle'
+  Iridium_deb_file = 'Data/TLE data/Iridium 33 deb.txt'
+
+  Cosmos_url = 'https://celestrak.org/NORAD/elements/gp.php?CATNR=900&FORMAT=tle' 
+  Cosmos_deb_file ='Data/TLE data/Cosmos 2251 deb.txt'
+
+  #a source can be a file or URL.
+  #Set the track_time for the first Sat in the list to be true
+  Iridium_deb = satellite(source=Iridium_deb_file,is_file=True,track_time=True) 
+
+  Cosmos_deb = satellite(source=Cosmos_deb_file,is_file=True,track_time=False)
+
+  satellites = [Iridium_deb,Cosmos_deb]
+
+  start_year = 2024
+  start_month = 9
+  start_day = 30
+
+  end_year = 2024
+  end_month = 10
+  end_day = 1
+
+
+  #make sure that the start date is before the end_date
+  start_date = datetime(start_year,start_month,start_day, tzinfo=timezone.utc)
+  end_date = datetime(end_year,end_month,end_day, tzinfo=timezone.utc)
   
-  sim.start_simulation_plot()
+  #increments =  [weeks, days, hours, minutes, seconds]
+  #Ensure the increments do not exceed the total time difference
+  increments = [0,0,0,3,0] #this will get coordinates every 3 mins in the simulation
+
+  tolerance_zone = 100 # a "warning zone"(km)
+  repeat = False #to repeat the simulation once it has finished
+  collision_zone = 5 # how close two objects will have to be to classify as collision(in km)
+
+  playback_speed = 2 #each frame will update every 2 ms
+
+
+  sim  = simulation.simulation(satellites,tolerance_zone,collision_zone,start_date,end_date,increments,playback_speed,repeat)
+
+  sim.start_simulation_no_plot() #will calculate all the values without the plots(faster)
+
+  #sim.start_simulation_plot() #will calculate all the values with the plots(3D animation, but slower to compile)
+
+  #sim.print_info()#to print out information obtained front the simulation
+
+  print(f'sim.get_closest_distance_time():{sim.get_closest_distance_time()}') #datetime of when two satellites were the closest to each other
+  print(f'sim.get_closest_distance_value():{sim.get_closest_distance_value()}') #In km, how close the two satellites were
+  print(f'sim.get_sat1_name():{sim.get_sat1_name()}') #Closest satellite 1 
+  print(f'sim.get_sat1_coordinates():{sim.get_sat1_coordinates()}')
+  print(f'sim.get_sat2_name():{sim.get_sat2_name()}') #Closest satellite 2
+  print(f'sim.get_sat2_coordinates():{sim.get_sat2_coordinates()}')
+  
+  print(f'sim.get_collision_coordinates():{sim.get_collision_coordinates()}') #the coordinates of the two satellites colliding
+  print(f'sim.get_collision_sates_names():{sim.get_collision_sates_names()}') # the names of the two satellites colliding
+  print(f'sim.get_collision_dates():{sim.get_collision_dates()}') #datetime when collision occured
+
+  print(f'sim.get_tolerance_coordinates():{sim.get_tolerance_coordinates()}') #the coordinates of the two satellites within the tolerance zone
+  print(f'sim.get_tolerance_sat_dates():{sim.get_tolerance_sat_dates()}')#the datetime of the two satellites when they are within the tolerance zone
+  print(f'sim.get_tolerance_sat_names():{sim.get_tolerance_sats_names()}')#the names of the two satellites when they arewithin the tolerance zone
 
 def main():
-  example2()
+  example1()
+
+
   
 
 if __name__ == "__main__":

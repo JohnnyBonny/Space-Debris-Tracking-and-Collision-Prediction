@@ -16,17 +16,18 @@ import satellite
 fig = plt.figure()
 
 class simulation:
-  def __init__(self,satellites:list[satellite.satellite],tolerance_zone:int,collision_zone:int,start_date:datetime,end_date:datetime,steps:list[int],playback_speed:int,repeat:bool):
+  def __init__(self,satellites:list[satellite.satellite],tolerance_zone:int,collision_zone:int,start_date:datetime,end_date:datetime,increments:list[int],playback_speed:int,repeat:bool):
     self.satellites = satellites
     self.tolerance_zone = tolerance_zone
     self.start_date = start_date
     self.end_date = end_date
-    self.steps = steps
+    self.increments = increments
     self.playback_speed = playback_speed
     self.repeat = repeat
     self.collision_zone = collision_zone
 
-    
+    #variables relating to when satellites are the closest to each
+    #other in the simulation
     self.closest_distance_value= float('inf')
     self.closest_distance_time = start_date
     self.sat1_name = ""
@@ -34,21 +35,37 @@ class simulation:
     self.sat1_coordinates = []
     self.sat2_coordinates = []
 
-    #a list of coordinates
+    #a list of coordinates for the collision
+    #example: [[sat1_coordinates,sat2_coordinates],]
     self.collision_coordinates = []
     
+    self.collision_sats_names_set = set()
+
     #a list of a list of the two sats that collided
     #[[sat1,sat2],[sat1]..]
     self.collision_sats_names = []
+    
+    # example:[datetime,]
+    self.collision_dates = [] 
+    
+    #a list of coordinates
+    #[[sat1,sat2]]
+    self.tolerance_coordinates = []
+    
+    #a list of a list of the two sats that collided
+    #[[sat1,sat2],[sat1]..]
+    self.tolerance_sats_names_set = set()
 
-    self.collision_dates = []
+    self.tolerance_sat_dates = []
+    self.tolerance_sats_names = []
     
     #used to check if we ran a simulation before
     self.sim_ran = False
 
-    #if we used the populate sat function
-    self.did_auto_populate =False
+    #if we got the coordinates already
+    self.got_coordinates =False
 
+    #--------------Text for 3D window---------------------------
     #the text so show the current time
     self.current_time_text = fig.text(.36, 0.9, "", style = 'italic', fontsize = 18, color = "black") 
 
@@ -76,8 +93,8 @@ class simulation:
     #the text at the left of the plot to show the end date
     self.end_date_text = fig.text(.01, 0.46, f"End date: {self.end_date}UTC", style = 'italic', fontsize = 13, color = "black")
 
-    self.steps_top_text = fig.text(.01, 0.42, f"Calulations will happen every", style = 'italic', fontsize = 13, color = "black")
-    self.steps_bottom_text = fig.text(.01, 0.38, f"{self.steps[0]} weeks,{self.steps[1]} days,{self.steps[2]} hours,{self.steps[3]} minutes, {self.steps[4]} seconds", style = 'italic', fontsize = 13, color = "black")
+    self.increments_top_text = fig.text(.01, 0.42, f"Calulations will happen every", style = 'italic', fontsize = 13, color = "black")
+    self.increments_bottom_text = fig.text(.01, 0.38, f"{self.increments[0]} weeks,{self.increments[1]} days,{self.increments[2]} hours,{self.increments[3]} minutes, {self.increments[4]} seconds", style = 'italic', fontsize = 13, color = "black")
 
     #the text to show when an two satellites fell within the tolerance zone
     self.tolerance_text = fig.text(.75, 0.8, f"Tolerance Zone({self.tolerance_zone}km) has not been met", style = 'italic', fontsize = 13, color = "green") 
@@ -95,7 +112,7 @@ class simulation:
     self.collision_coord_top_text = fig.text(.75, 0.64, f"", style = 'italic', fontsize = 13, color = "black") 
     self.collision_coord_bottom_text = fig.text(.75, 0.6, f"", style = 'italic', fontsize = 13, color = "black") 
 
-
+    #--------------Text for 3D window---------------------------
 
   def get_closest_distance_value(self):
     return self.closest_distance_value
@@ -124,14 +141,24 @@ class simulation:
   def get_collision_dates(self):
     return self.collision_dates
   
-  def validate_sim_date(self,start_date:datetime, end_date:datetime,steps:int):
+
+  def get_tolerance_coordinates(self):
+    return self.tolerance_coordinates
+  
+  def get_tolerance_sats_names(self):
+    return self.tolerance_sats_names
+  
+  def get_tolerance_sat_dates(self):
+    return self.tolerance_sat_dates
+  
+  def validate_sim_date(self,start_date:datetime, end_date:datetime,increments:int):
     #insures that at least 1 simulation can be ran
-    if (start_date + datetime.timedelta(weeks=steps[0], days=steps[1], hours=steps[2], minutes=steps[3], seconds=steps[4])) < end_date and start_date < end_date:
+    if (start_date + datetime.timedelta(weeks=increments[0], days=increments[1], hours=increments[2], minutes=increments[3], seconds=increments[4])) < end_date:
       return True
     else:
       return False
     
-  #updates the frame of the animation to only show 4 points at a time
+  #updates the frame of the animation to only show 4 points at a time(ONLY USED IN start_simulation_plot())
   def update_data(self,frames,lines,ax):
     start_index = max(0,frames-3) #frames - 3 means we are only getting 4 points at a time
     end_index = frames + 1
@@ -163,35 +190,6 @@ class simulation:
           distance = float(f"{distance:.2f}")
           self.closest_distance_value = distance
           self.closest_distance_time = self.satellites[0].get_times()[end_index]
-          if distance <= self.collision_zone:
-            self.collision_coordinates = [self.satellites[x].get_x_position()[end_index],self.satellites[x].get_y_position()[end_index],
-            self.satellites[x].get_z_position()[end_index]]
-
-            self.collision_status_text.set_text(f"Collision(within {self.collision_zone}km of each) has been detected")
-            self.collision_status_text.set_color('red')
-
-            self.collision_sat_text.set_text(f"Most recent collision:{self.satellites[x].get_name()} and {self.satellites[y].get_name()} ")
-            self.collision_time_text.set_text(f"At {self.closest_distance_time}UTC")
-            
-            self.collision_coord_top_text.set_text(f'Collision is at(TEME reference frame):')
-            self.collision_coord_bottom_text.set_text(f'x: {self.satellites[x].get_x_position()[end_index]:.2f} y: {self.satellites[x].get_y_position()[end_index]:.2f} z: {self.satellites[x].get_z_position()[end_index]:.2f}')
-
-            #print(f"Oh no {self.satellites[x].get_name()} and {self.satellites[y].get_name()} collided!(most likely)")
-            #print(f'The position of this collision is at x: {self.satellites[x].get_x_position()[end_index]:.2f} y: {self.satellites[x].get_y_position()[end_index]:.2f} z: {self.satellites[x].get_z_position()[end_index]:.2f}')
-            #print(f'This occured on {self.closest_distance_time}UTC between {self.satellites[x].get_name()} and {self.satellites[y].get_name()}')
-            ax.scatter(self.satellites[x].get_x_position()[end_index],self.satellites[x].get_y_position()[end_index],self.satellites[x].get_z_position()[end_index],color='red')
-            ax.scatter(self.satellites[y].get_x_position()[end_index],self.satellites[y].get_y_position()[end_index],self.satellites[y].get_z_position()[end_index],color='red')
-
-
-          if distance < self.tolerance_zone:
-            #print("WARNING! WITHIN TOLERANCE ZONE!")
-            self.tolerance_text.set_text(f'WARNING! WITHIN TOLERANCE ZONE OF {self.tolerance_zone}KM')
-            self.tolerance_text.set_color('red')
-          
-
-          #print(f'The closest distance between the two objects is {self.closest_distance_value}km')
-          #print(f'This occured on {self.closest_distance_time}UTC between {self.satellites[x].get_name()} and {self.satellites[y].get_name()}')
-
           self.closest_dist_text.set_text(f'The closest distance between the two objects is {self.closest_distance_value}km')
           self.closest_time_text.set_text(f'This occured on {self.closest_distance_time}UTC')
           self.closest_sats_text.set_text(f'between {self.satellites[x].get_name()} and {self.satellites[y].get_name()}')
@@ -208,7 +206,55 @@ class simulation:
 
           self.sat2_coord_text.set_text(f'{self.satellites[y].get_name()}: ({self.satellites[y].get_x_position()[end_index]:.2f}, {self.satellites[y].get_y_position()[end_index]:.2f}, {self.satellites[y].get_z_position()[end_index]:.2f})')
 
-    #if we are on the very last frame
+        if distance <= self.collision_zone:
+          sat1_name = self.satellites[x].get_name()
+          sat2_name = self.satellites[y].get_name()
+          sats_name = (sat1_name,sat2_name)
+
+          if sat_names not in self.collision_sats_names_set:
+            self.collision_sats_names_set.add(sats_name)
+            self.collision_coordinates.append([self.satellites[x].get_x_position()[end_index],self.satellites[x].get_y_position()[end_index],
+            self.satellites[x].get_z_position()[end_index]])
+
+            self.collision_sats_names.append([self.satellites[x].get_name(), self.satellites[y].get_name()])
+            self.collision_dates.append(self.closest_distance_time)
+
+
+            self.collision_status_text.set_text(f"Collision(within {self.collision_zone}km of each) has been detected")
+            self.collision_status_text.set_color('red')
+
+            self.collision_sat_text.set_text(f"Most recent collision:{self.satellites[x].get_name()} and {self.satellites[y].get_name()} ")
+            self.collision_time_text.set_text(f"At {self.closest_distance_time}UTC")
+            
+            self.collision_coord_top_text.set_text(f'Collision is at(TEME reference frame):')
+            self.collision_coord_bottom_text.set_text(f'x: {self.satellites[x].get_x_position()[end_index]:.2f} y: {self.satellites[x].get_y_position()[end_index]:.2f} z: {self.satellites[x].get_z_position()[end_index]:.2f}')
+
+            #plot the collision
+            ax.scatter(self.satellites[x].get_x_position()[end_index],self.satellites[x].get_y_position()[end_index],self.satellites[x].get_z_position()[end_index],color='red')
+            ax.scatter(self.satellites[y].get_x_position()[end_index],self.satellites[y].get_y_position()[end_index],self.satellites[y].get_z_position()[end_index],color='red')
+
+
+          if distance < self.tolerance_zone:
+            #print("WARNING! WITHIN TOLERANCE ZONE!")
+            self.tolerance_text.set_text(f'WARNING! WITHIN TOLERANCE ZONE OF {self.tolerance_zone}KM')
+            self.tolerance_text.set_color('red')
+
+            sat_names =(self.satellites[x].get_name(), self.satellites[y].get_name())
+            #put into tolerance list
+            if sat_names not in self.tolerance_sats_names:
+              sat1_coord = [self.satellites[x].get_x_position()[end_index],self.satellites[x].get_y_position()[end_index],
+              self.satellites[x].get_z_position()[end_index]]
+
+              sat2_coord = [self.satellites[y].get_x_position()[end_index],self.satellites[y].get_y_position()[end_index],self.satellites[y].get_z_position()[end_index]]
+
+              self.tolerance_coordinates.append([sat1_coord,sat2_coord])
+
+              self.tolerance_sats_names_set.add(sat_names)
+              self.tolerance_sat_dates.append(self.closest_distance_time)
+              self.tolerance_sats_names.append([self.satellites[x].get_name(), self.satellites[y].get_name()])
+          
+
+    #if we are on the very last frame put the points of the two satellites that were the closest to each other
     if frames == len(self.satellites[0].get_x_position())-2:
       
       ax.scatter(self.sat1_coordinates[0],self.sat1_coordinates[1],self.sat1_coordinates[2],color='orange')
@@ -237,42 +283,46 @@ class simulation:
     while i < number_sats * 3:
       if i == 0:
         s1 = satellite.satellite("",False,True)
-        s1.get_coordinates_auto(self.start_date,self.end_date,self.steps,lines,i)
+        s1.get_coordinates_auto(self.start_date,self.end_date,self.increments,lines,i)
         self.satellites.append(s1)
       else:
         s2 = satellite.satellite("",False,False)
-        s2.get_coordinates_auto(self.start_date,self.end_date,self.steps,lines,i)
+        s2.get_coordinates_auto(self.start_date,self.end_date,self.increments,lines,i)
         self.satellites.append(s2)
 
       i+=3
 
-      self.did_auto_populate = True
+      self.got_coordinates = True
 
 
-      
-    
   def start_simulation_plot(self):
 
+    if len(self.satellites) == 0:
+      print("Can not run test because there are no satellites in the list")
+      return
+    
     #reset the simulation if I ran one before
     if self.sim_ran == True:
       self.closest_distance_value= float('inf')
       self.closest_distance_time = self.start_date
 
-      #add the additional variables
 
     # add subplot with projection='3d'
     ax = fig.add_subplot(111, projection='3d')
     lines = []
     
-    #colors = list(mcolors._colors_full_map.keys())
 
-    if self.validate_sim_date(self.start_date,self.end_date,self.steps) == True:
+    if self.validate_sim_date(self.start_date,self.end_date,self.increments) == True:
       for satellite in self.satellites:
-        #satellite.get_coordinates_man(self.start_date,self.end_date,self.steps)
-        #plot, = ax.plot([],[],[],color = random.choice(colors))
-        if self.did_auto_populate != True:
-          satellite.get_coordinates_man(self.start_date,self.end_date,self.steps)
+
+        #if we never got the coordinates for the satellites, then we must get them now
+        if self.got_coordinates != True:
+          satellite.get_coordinates_man(self.start_date,self.end_date,self.increments)
+
+        #the plot variable is a 2D line with 3 positions(x,y,z)
         plot, = ax.plot([],[],[],color = 'r',linewidth=2)
+
+        #the plot variables will tell the program the position to draw the line
         lines.append(plot)
 
       # Plot the Earth as a blue sphere
@@ -292,6 +342,11 @@ class simulation:
       ax.set_ylabel('Y Position (km)')
       ax.set_zlabel('Z Position (km)')
 
+      self.sim_ran = True
+
+      #we already got the coordinates of the satellites when we run the simulation function
+      self.got_coordinates = True
+
       plt.show()
     else:
       print("The simulation dates are incorrect. Please try again")
@@ -300,18 +355,24 @@ class simulation:
   
   def start_simulation_no_plot(self):
 
+    if len(self.satellites) == 0:
+      print("Can not run test because there are no satellites in the list")
+      return
+    
     #Do a simulation if we haven't ran a simulation before,
     #If we had ran a simulation. All the variables should already be updated
     if self.sim_ran != True:
 
       self.sim_ran = True
       
-      if self.validate_sim_date(self.start_date,self.end_date,self.steps) == True:
-
+      if self.validate_sim_date(self.start_date,self.end_date,self.increments) == True:
+        print("Starting Simulation")
         #if the satellites were manual put in a list then get the coordinates
-        if self.did_auto_populate != True:
+        if self.got_coordinates != True:
           for satellite in self.satellites:
-            satellite.get_coordinates_man(self.start_date,self.end_date,self.steps)
+            satellite.get_coordinates_man(self.start_date,self.end_date,self.increments)
+            #we already got the coordinates of the satellites when we run the simulation function
+            self.got_coordinates = True
         
         
         #stores the array of all the satellites coordinates
@@ -339,22 +400,6 @@ class simulation:
                 self.closest_distance_value = distance
                 self.closest_distance_time = self.satellites[0].get_times()[step] 
 
-                #message for if the satellites are within 4 km
-                if distance <= self.collision_zone:
-                  print(f"Oh no {self.satellites[x].get_name()} and {self.satellites[y].get_name()} collided!(most likely)")
-                  print(f'The position of this collision is at x: {self.satellites[x].get_x_position()[step]:.2f} y: {self.satellites[x].get_y_position()[step]:.2f} z: {self.satellites[x].get_z_position()[step]:.2f}')
-                  print(f'This occured on {self.closest_distance_time}UTC between {self.satellites[x].get_name()} and {self.satellites[y].get_name()}')
-
-                  collision_coordinates = [self.satellites[x].get_x_position()[step],self.satellites[x].get_y_position()[step],self.satellites[x].get_z_position()[step]]
-
-                  self.collision_coordinates.append(collision_coordinates)
-                  self.collision_sats_names.append([self.satellites[x].get_name() and self.satellites[y].get_name()])
-                  self.collision_dates.append(self.closest_distance_time)
-
-                elif distance < self.tolerance_zone:
-                  print("WARNING! WITHIN TOLERANCE ZONE!")
-
-
                 #update the values
                 self.sat1_coordinates = [self.satellites[x].get_x_position()[step], self.satellites[x].get_y_position()[step],self.satellites[x].get_z_position()[step]]
 
@@ -363,8 +408,61 @@ class simulation:
                 self.sat1_name = self.satellites[x].get_name()
                 self.sat2_name = self.satellites[y].get_name()
 
+              #message for if the satellites are within collision zone value km
+              if distance <= self.collision_zone:
 
+                #create a hashset for the satellite pairs, so that we do not any duplicates
+                sat_names =(self.satellites[x].get_name(), self.satellites[y].get_name())
+                if sat_names not in self.collision_sats_names_set:
+                  self.collision_sats_names_set.add(sat_names)
 
+                  collision_coordinates = [self.satellites[x].get_x_position()[step],self.satellites[x].get_y_position()[step],self.satellites[x].get_z_position()[step]]
 
+                  self.collision_coordinates.append(collision_coordinates)
+                  self.collision_sats_names.append([self.satellites[x].get_name(), self.satellites[y].get_name()])
+                  self.collision_dates.append(self.closest_distance_time)
 
+              #if the distance is within the tolerance zone
+              #update the variables relating to the tolerance zone variables
+              if distance < self.tolerance_zone:
+                  
+                  #create a hashset for the satellite pairs, so that we do not any duplicates
+                  sat_names =(self.satellites[x].get_name(), self.satellites[y].get_name())
+                  if sat_names not in self.tolerance_sats_names:
+                    sat1_coord = [self.satellites[x].get_x_position()[step],self.satellites[x].get_y_position()[step],
+                    self.satellites[x].get_z_position()[step]]
+
+                    sat2_coord = [self.satellites[y].get_x_position()[step],self.satellites[y].get_y_position()[step],
+                    self.satellites[y].get_z_position()[step]]
+
+                    self.tolerance_coordinates.append([sat1_coord,sat2_coord])
+
+                    self.tolerance_sats_names_set.add(sat_names)
+                    self.tolerance_sat_dates.append(self.closest_distance_time)
+                    self.tolerance_sats_names.append([self.satellites[x].get_name(), self.satellites[y].get_name()])
+
+    else:
+      print("Starting Simulation")
+    print("Simulation complete") 
+    
+
+  def print_info(self):
+      print("\n\"Note that the SGP4 propagator returns raw x,y,z Cartesian coordinates in a “True Equator Mean Equinox” (TEME) reference frame \nthat’s centered on the Earth but does not rotate with it — an “Earth centered inertial” (ECI) reference frame.")
+      print("Source: https://pypi.org/project/sgp4/ \n") 
+
+      print(f'Result: Closest distance was {self.closest_distance_value}km, and it happened on {self.closest_distance_time}UTC')
+
+      print(f'{self.sat1_name} Coordinates: {self.sat2_coordinates}')
+      print(f'{self.sat2_name} Coordinates: {self.sat2_coordinates}')
+
+      if len(self.collision_dates) > 0:
+        print("\nCollision information:")
+        print(f"the coordinates are: {self.collision_coordinates}")
+        print(f"the dates are: {self.collision_dates}")
+        print(f"the names of the satellites are:{self.collision_sats_names}")
+      else:
+        print("\nNo Collision detected")
+
+      print(f'\nAll the sats in the tolerance zone {self.tolerance_sats_names}')
+      print(f'All the dates these sats were the tolerance zone {self.tolerance_sat_dates}')
         
