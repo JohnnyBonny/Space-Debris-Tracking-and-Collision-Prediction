@@ -94,7 +94,9 @@ def example2():
   sim.start_simulation_no_plot()
 
   sim.print_info()
-  #sim.start_simulation_plot()
+  sim.start_simulation_plot()
+
+  sim.print_info()
 
 #sample of what happens if satellites collides
 def example3():
@@ -178,27 +180,28 @@ def example4():
 
   sim.start_simulation_no_plot() #will calculate all the values without the plots(faster)
 
-  #sim.start_simulation_plot() #will calculate all the values with the plots(3D animation, but slower to compile)
+  sim.start_simulation_plot() #will calculate all the values with the plots(3D animation, but slower at runtime)
 
-  #sim.print_info()#to print out information obtained front the simulation
-
-  print(f'sim.get_closest_distance_time():{sim.get_closest_distance_time()}') #datetime of when two satellites were the closest to each other
+  sim.print_info()#to print out information obtained front the simulation
+  
+  
+  print(f'\nsim.get_closest_distance_time():{sim.get_closest_distance_time()}') #datetime of when two satellites were the closest to each other
   print(f'sim.get_closest_distance_value():{sim.get_closest_distance_value()}') #In km, how close the two satellites were
   print(f'sim.get_sat1_name():{sim.get_sat1_name()}') #Closest satellite 1 
   print(f'sim.get_sat1_coordinates():{sim.get_sat1_coordinates()}')
   print(f'sim.get_sat2_name():{sim.get_sat2_name()}') #Closest satellite 2
-  print(f'sim.get_sat2_coordinates():{sim.get_sat2_coordinates()}')
+  print(f'sim.get_sat2_coordinates():{sim.get_sat2_coordinates()}\n')
   
   print(f'sim.get_collision_coordinates():{sim.get_collision_coordinates()}') #the coordinates of the two satellites colliding
   print(f'sim.get_collision_sates_names():{sim.get_collision_sates_names()}') # the names of the two satellites colliding
-  print(f'sim.get_collision_dates():{sim.get_collision_dates()}') #datetime when collision occured
+  print(f'sim.get_collision_dates():{sim.get_collision_dates()}\n') #datetime when collision occured
 
   print(f'sim.get_tolerance_coordinates():{sim.get_tolerance_coordinates()}') #the coordinates of the two satellites within the tolerance zone
   print(f'sim.get_tolerance_sat_dates():{sim.get_tolerance_sat_dates()}')#the datetime of the two satellites when they are within the tolerance zone
   print(f'sim.get_tolerance_sat_names():{sim.get_tolerance_sats_names()}')#the names of the two satellites when they arewithin the tolerance zone
 
 def main():
-  example1()
+  example2()
 
 
   

@@ -42,18 +42,17 @@ class simulation:
     self.collision_sats_names_set = set()
 
     #a list of a list of the two sats that collided
-    #[[sat1,sat2],[sat1]..]
+    #[[sat1,sat2],[sat1,sat3]..]
     self.collision_sats_names = []
     
     # example:[datetime,]
     self.collision_dates = [] 
     
     #a list of coordinates
-    #[[sat1,sat2]]
+    #example: [[sat1_coordinates,sat2_coordinates],]
     self.tolerance_coordinates = []
     
-    #a list of a list of the two sats that collided
-    #[[sat1,sat2],[sat1]..]
+    #a list of a tuple two sats that are within the tolerance_zone
     self.tolerance_sats_names_set = set()
 
     self.tolerance_sat_dates = []
@@ -62,7 +61,7 @@ class simulation:
     #used to check if we ran a simulation before
     self.sim_ran = False
 
-    #if we got the coordinates already
+    #if we got the coordinates already for all the satellites
     self.got_coordinates =False
 
     #--------------Text for 3D window---------------------------
@@ -193,7 +192,6 @@ class simulation:
           self.closest_dist_text.set_text(f'The closest distance between the two objects is {self.closest_distance_value}km')
           self.closest_time_text.set_text(f'This occured on {self.closest_distance_time}UTC')
           self.closest_sats_text.set_text(f'between {self.satellites[x].get_name()} and {self.satellites[y].get_name()}')
-
           self.sat1_coordinates = [self.satellites[x].get_x_position()[end_index], self.satellites[x].get_y_position()[end_index],self.satellites[x].get_z_position()[end_index]]
 
           self.sat2_coordinates = [self.satellites[y].get_x_position()[end_index], self.satellites[y].get_y_position()[end_index],self.satellites[y].get_z_position()[end_index]]
@@ -207,38 +205,40 @@ class simulation:
           self.sat2_coord_text.set_text(f'{self.satellites[y].get_name()}: ({self.satellites[y].get_x_position()[end_index]:.2f}, {self.satellites[y].get_y_position()[end_index]:.2f}, {self.satellites[y].get_z_position()[end_index]:.2f})')
 
         if distance <= self.collision_zone:
-          sat1_name = self.satellites[x].get_name()
-          sat2_name = self.satellites[y].get_name()
-          sats_name = (sat1_name,sat2_name)
+          #this is information we already know, so we can just skip it section and only update the text on the simulation
+          if self.sim_ran == False:
+            sat1_name = self.satellites[x].get_name()
+            sat2_name = self.satellites[y].get_name()
+            sats_name = (sat1_name,sat2_name)
 
-          if sat_names not in self.collision_sats_names_set:
-            self.collision_sats_names_set.add(sats_name)
-            self.collision_coordinates.append([self.satellites[x].get_x_position()[end_index],self.satellites[x].get_y_position()[end_index],
-            self.satellites[x].get_z_position()[end_index]])
+            if sat_names not in self.collision_sats_names_set:
+              self.collision_sats_names_set.add(sats_name)
+              self.collision_coordinates.append([self.satellites[x].get_x_position()[end_index],self.satellites[x].get_y_position()[end_index],
+              self.satellites[x].get_z_position()[end_index]])
 
-            self.collision_sats_names.append([self.satellites[x].get_name(), self.satellites[y].get_name()])
-            self.collision_dates.append(self.closest_distance_time)
+              self.collision_sats_names.append([self.satellites[x].get_name(), self.satellites[y].get_name()])
+              self.collision_dates.append(self.closest_distance_time)
+
+          self.collision_status_text.set_text(f"Collision(within {self.collision_zone}km of each) has been detected")
+          self.collision_status_text.set_color('red')
+
+          self.collision_sat_text.set_text(f"Most recent collision:{self.satellites[x].get_name()} and {self.satellites[y].get_name()} ")
+          self.collision_time_text.set_text(f"At {self.closest_distance_time}UTC")
+          
+          self.collision_coord_top_text.set_text(f'Collision is at(TEME reference frame):')
+          self.collision_coord_bottom_text.set_text(f'x: {self.satellites[x].get_x_position()[end_index]:.2f} y: {self.satellites[x].get_y_position()[end_index]:.2f} z: {self.satellites[x].get_z_position()[end_index]:.2f}')
+
+          #plot the collision
+          ax.scatter(self.satellites[x].get_x_position()[end_index],self.satellites[x].get_y_position()[end_index],self.satellites[x].get_z_position()[end_index],color='red')
+          ax.scatter(self.satellites[y].get_x_position()[end_index],self.satellites[y].get_y_position()[end_index],self.satellites[y].get_z_position()[end_index],color='red')
 
 
-            self.collision_status_text.set_text(f"Collision(within {self.collision_zone}km of each) has been detected")
-            self.collision_status_text.set_color('red')
-
-            self.collision_sat_text.set_text(f"Most recent collision:{self.satellites[x].get_name()} and {self.satellites[y].get_name()} ")
-            self.collision_time_text.set_text(f"At {self.closest_distance_time}UTC")
-            
-            self.collision_coord_top_text.set_text(f'Collision is at(TEME reference frame):')
-            self.collision_coord_bottom_text.set_text(f'x: {self.satellites[x].get_x_position()[end_index]:.2f} y: {self.satellites[x].get_y_position()[end_index]:.2f} z: {self.satellites[x].get_z_position()[end_index]:.2f}')
-
-            #plot the collision
-            ax.scatter(self.satellites[x].get_x_position()[end_index],self.satellites[x].get_y_position()[end_index],self.satellites[x].get_z_position()[end_index],color='red')
-            ax.scatter(self.satellites[y].get_x_position()[end_index],self.satellites[y].get_y_position()[end_index],self.satellites[y].get_z_position()[end_index],color='red')
-
-
-          if distance < self.tolerance_zone:
-            #print("WARNING! WITHIN TOLERANCE ZONE!")
-            self.tolerance_text.set_text(f'WARNING! WITHIN TOLERANCE ZONE OF {self.tolerance_zone}KM')
-            self.tolerance_text.set_color('red')
-
+        if distance < self.tolerance_zone:
+          #print("WARNING! WITHIN TOLERANCE ZONE!")
+          self.tolerance_text.set_text(f'WARNING! WITHIN TOLERANCE ZONE OF {self.tolerance_zone}KM')
+          self.tolerance_text.set_color('red')
+          
+          if self.sim_ran == False:
             sat_names =(self.satellites[x].get_name(), self.satellites[y].get_name())
             #put into tolerance list
             if sat_names not in self.tolerance_sats_names:
@@ -274,7 +274,7 @@ class simulation:
     lines = response.text.strip().splitlines()
 
     #grab as many satellites from the url if the user input > the number of sats
-    if len(lines) * 3 < number_sats:
+    if len(lines) /3  < number_sats:
       print(f"We can only grab at most {len(lines) / 3}")
       number_sats = len(lines) / 3
 
@@ -292,7 +292,7 @@ class simulation:
 
       i+=3
 
-      self.got_coordinates = True
+    self.got_coordinates = True
 
 
   def start_simulation_plot(self):
@@ -301,14 +301,16 @@ class simulation:
       print("Can not run test because there are no satellites in the list")
       return
     
-    #reset the simulation if I ran one before
+    #We only need to reset these variables, because 
+    #these variables are constantly updating in a simulation
     if self.sim_ran == True:
       self.closest_distance_value= float('inf')
       self.closest_distance_time = self.start_date
 
-
     # add subplot with projection='3d'
     ax = fig.add_subplot(111, projection='3d')
+
+    #all the lines that are going to be displayed in each frame of the simulation
     lines = []
     
 
@@ -327,12 +329,18 @@ class simulation:
 
       # Plot the Earth as a blue sphere
       earth_radius = 6371  # Earth's radius in km
+
+      #the angles around the equator
       u = np.linspace(0, 2 * np.pi, 100)
+
+      #the angles from the north to the south pole
       v = np.linspace(0, np.pi, 100)
+
       x_earth = earth_radius * np.outer(np.cos(u), np.sin(v))
       y_earth = earth_radius * np.outer(np.sin(u), np.sin(v))
       z_earth = earth_radius * np.outer(np.ones(np.size(u)), np.cos(v))
       ax.plot_surface(x_earth, y_earth, z_earth, color='blue', alpha=0.6)
+      #sphere reference: YouTube, YouTube, www.youtube.com/watch?v=DV4GjHH-fvc&t=32s. Accessed 6 Oct. 2024. 
       
       animation = FuncAnimation(fig=fig,func=self.update_data,frames=len(self.satellites[0].get_x_position())-1,interval=self.playback_speed,fargs=(lines,ax,),repeat= self.repeat)
 
@@ -361,7 +369,7 @@ class simulation:
     
     #Do a simulation if we haven't ran a simulation before,
     #If we had ran a simulation. All the variables should already be updated
-    if self.sim_ran != True:
+    if self.sim_ran ==False:
 
       self.sim_ran = True
       
@@ -428,7 +436,7 @@ class simulation:
                   
                   #create a hashset for the satellite pairs, so that we do not any duplicates
                   sat_names =(self.satellites[x].get_name(), self.satellites[y].get_name())
-                  if sat_names not in self.tolerance_sats_names:
+                  if sat_names not in self.tolerance_sats_names_set:
                     sat1_coord = [self.satellites[x].get_x_position()[step],self.satellites[x].get_y_position()[step],
                     self.satellites[x].get_z_position()[step]]
 

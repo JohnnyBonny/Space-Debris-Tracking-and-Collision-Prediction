@@ -1,0 +1,1 @@
+  sim.print_info()

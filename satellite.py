@@ -15,12 +15,13 @@ class satellite:
     self.y_position = []
     self.z_position = []
     self.is_file = is_file
+    #we only need to make 1 sat track the time since the simulation are all done at the sametime
+    self.track_time =track_time
 
     #records all the dates and times of our simulation
     self.times = []
 
-    #we only need to make 1 sat track the time since the simulation are all done at the sametime
-    self.track_time =track_time
+    
 
   def get_name(self):
     return self.name
