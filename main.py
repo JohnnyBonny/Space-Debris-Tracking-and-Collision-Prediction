@@ -139,7 +139,7 @@ def example3():
 #for slides
 def example4():
   Iridium_url = 'https://celestrak.org/NORAD/elements/gp.php?CATNR=33853&FORMAT=tle'
-  Iridium_deb_file = 'Data/TLE data/Iridium 33 deb.txt'
+  Iridium_deb_file = 'Data/TLE data/Iridium 33 deb.tx'
 
   Cosmos_url = 'https://celestrak.org/NORAD/elements/gp.php?CATNR=900&FORMAT=tle' 
   Cosmos_deb_file ='Data/TLE data/Cosmos 2251 deb.txt'
@@ -201,7 +201,7 @@ def example4():
   print(f'sim.get_tolerance_sat_names():{sim.get_tolerance_sats_names()}')#the names of the two satellites when they arewithin the tolerance zone
 
 def main():
-  example2()
+  example4()
 
 
   

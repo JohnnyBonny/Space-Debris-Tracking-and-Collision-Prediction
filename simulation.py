@@ -180,7 +180,8 @@ class simulation:
       lines[index].set_3d_properties(z_positions[start_index:end_index])  # Set the Z data for 3D
       points.append(np.array([x_positions[end_index], y_positions[end_index], z_positions[end_index]]))
 
-    #calculate the closest two lines were to each other
+    
+  #calculate the closest two lines were to each other
     for x in range(len(points)):
       for y in range(x+1,len(points)):
         distance = abs(np.linalg.norm(points[y] - points[x])) #Source: (12)
@@ -234,25 +235,25 @@ class simulation:
 
 
         if distance < self.tolerance_zone:
-          #print("WARNING! WITHIN TOLERANCE ZONE!")
-          self.tolerance_text.set_text(f'WARNING! WITHIN TOLERANCE ZONE OF {self.tolerance_zone}KM')
-          self.tolerance_text.set_color('red')
-          
-          if self.sim_ran == False:
-            sat_names =(self.satellites[x].get_name(), self.satellites[y].get_name())
-            #put into tolerance list
-            if sat_names not in self.tolerance_sats_names:
-              sat1_coord = [self.satellites[x].get_x_position()[end_index],self.satellites[x].get_y_position()[end_index],
-              self.satellites[x].get_z_position()[end_index]]
+            #print("WARNING! WITHIN TOLERANCE ZONE!")
+            self.tolerance_text.set_text(f'WARNING! WITHIN TOLERANCE ZONE OF {self.tolerance_zone}KM')
+            self.tolerance_text.set_color('red')
+            
+            if self.sim_ran == False:
+              sat_names =(self.satellites[x].get_name(), self.satellites[y].get_name())
+              #put into tolerance list
+              if sat_names not in self.tolerance_sats_names:
+                sat1_coord = [self.satellites[x].get_x_position()[end_index],self.satellites[x].get_y_position()[end_index],
+                self.satellites[x].get_z_position()[end_index]]
 
-              sat2_coord = [self.satellites[y].get_x_position()[end_index],self.satellites[y].get_y_position()[end_index],self.satellites[y].get_z_position()[end_index]]
+                sat2_coord = [self.satellites[y].get_x_position()[end_index],self.satellites[y].get_y_position()[end_index],self.satellites[y].get_z_position()[end_index]]
 
-              self.tolerance_coordinates.append([sat1_coord,sat2_coord])
+                self.tolerance_coordinates.append([sat1_coord,sat2_coord])
 
-              self.tolerance_sats_names_set.add(sat_names)
-              self.tolerance_sat_dates.append(self.closest_distance_time)
-              self.tolerance_sats_names.append([self.satellites[x].get_name(), self.satellites[y].get_name()])
-          
+                self.tolerance_sats_names_set.add(sat_names)
+                self.tolerance_sat_dates.append(self.closest_distance_time)
+                self.tolerance_sats_names.append([self.satellites[x].get_name(), self.satellites[y].get_name()])
+            
 
     #if we are on the very last frame put the points of the two satellites that were the closest to each other
     if frames == len(self.satellites[0].get_x_position())-2:
@@ -315,17 +316,34 @@ class simulation:
     
 
     if self.validate_sim_date(self.start_date,self.end_date,self.increments) == True:
-      for satellite in self.satellites:
-
+      for index,satellite in enumerate(self.satellites):
+      
         #if we never got the coordinates for the satellites, then we must get them now
-        if self.got_coordinates != True:
-          satellite.get_coordinates_man(self.start_date,self.end_date,self.increments)
+        if self.got_coordinates == False:
+          valid_satellite = satellite.get_coordinates_man(self.start_date,self.end_date,self.increments)
 
-        #the plot variable is a 2D line with 3 positions(x,y,z)
-        plot, = ax.plot([],[],[],color = 'r',linewidth=2)
+          if valid_satellite == True:
+            #the plot variable is a 2D line with 3 positions(x,y,z)
+            plot, = ax.plot([],[],[],color = 'r',linewidth=2)
 
-        #the plot variables will tell the program the position to draw the line
-        lines.append(plot)
+            #the plot variables will tell the program the position to draw the line
+            lines.append(plot)
+            self.got_coordinates = True
+          else:
+            #if the first satellite can not be accessed, delete it and make the next satellite track the time
+            if index == 0:
+              self.satellites[index+1].set_track_time(True)
+              
+            self.satellites.remove(satellite)
+
+        else:
+            #the plot variable is a 2D line with 3 positions(x,y,z)
+            plot, = ax.plot([],[],[],color = 'r',linewidth=2)
+
+            #the plot variables will tell the program the position to draw the line
+            lines.append(plot)
+
+      
 
       # Plot the Earth as a blue sphere
       earth_radius = 6371  # Earth's radius in km
@@ -352,8 +370,6 @@ class simulation:
 
       self.sim_ran = True
 
-      #we already got the coordinates of the satellites when we run the simulation function
-      self.got_coordinates = True
 
       plt.show()
     else:
@@ -377,10 +393,24 @@ class simulation:
         print("Starting Simulation")
         #if the satellites were manual put in a list then get the coordinates
         if self.got_coordinates != True:
-          for satellite in self.satellites:
-            satellite.get_coordinates_man(self.start_date,self.end_date,self.increments)
-            #we already got the coordinates of the satellites when we run the simulation function
-            self.got_coordinates = True
+
+          for index,satellite in enumerate(self.satellites):
+            valid_satellite = satellite.get_coordinates_man(self.start_date,self.end_date,self.increments)
+            
+            if valid_satellite == True:
+              self.got_coordinates = True
+
+            else:
+              #if the first satellite can not be accessed, delete it and make the next satellite track the time
+              if index == 0:
+                self.satellites[index+1].set_track_time(True)
+
+              print(f'removing {satellite.get_name()}')
+              #if the satellite was not able to be obtained, delete it
+              self.satellites.remove(satellite)
+        
+
+              
         
         
         #stores the array of all the satellites coordinates
@@ -392,62 +422,63 @@ class simulation:
             x_positions = satellite.get_x_position()
             y_positions = satellite.get_y_position()
             z_positions = satellite.get_z_position()
-          
+    
             points.append(np.array([x_positions[step], y_positions[step], z_positions[step]]))
 
-          
-          #calculate the distance between each point in the current step 
-          for x in range(len(points)):
-            for y in range(x+1,len(points)):
+          else:
 
-              #The Euclidean distance formula
-              distance = abs(np.linalg.norm(points[y] - points[x])) #Source: (12)
+            #calculate the distance between each point in the current step 
+            for x in range(len(points)):
+              for y in range(x+1,len(points)):
 
-              if distance < self.closest_distance_value:
-                distance = float(f"{distance:.2f}")
-                self.closest_distance_value = distance
-                self.closest_distance_time = self.satellites[0].get_times()[step] 
+                #The Euclidean distance formula
+                distance = abs(np.linalg.norm(points[y] - points[x])) #Source: “Calculate the Euclidean Distance Using NumPy.” GeeksforGeeks, GeeksforGeeks, 30 July 2024, www.geeksforgeeks.org/calculate-the-euclidean-distance-using-numpy/. 
 
-                #update the values
-                self.sat1_coordinates = [self.satellites[x].get_x_position()[step], self.satellites[x].get_y_position()[step],self.satellites[x].get_z_position()[step]]
+                if distance < self.closest_distance_value:
+                  distance = float(f"{distance:.2f}")
+                  self.closest_distance_value = distance
+                  self.closest_distance_time = self.satellites[0].get_times()[step] 
 
-                self.sat2_coordinates = [self.satellites[y].get_x_position()[step], self.satellites[y].get_y_position()[step],self.satellites[y].get_z_position()[step]]
+                  #update the values
+                  self.sat1_coordinates = [self.satellites[x].get_x_position()[step], self.satellites[x].get_y_position()[step],self.satellites[x].get_z_position()[step]]
 
-                self.sat1_name = self.satellites[x].get_name()
-                self.sat2_name = self.satellites[y].get_name()
+                  self.sat2_coordinates = [self.satellites[y].get_x_position()[step], self.satellites[y].get_y_position()[step],self.satellites[y].get_z_position()[step]]
 
-              #message for if the satellites are within collision zone value km
-              if distance <= self.collision_zone:
+                  self.sat1_name = self.satellites[x].get_name()
+                  self.sat2_name = self.satellites[y].get_name()
 
-                #create a hashset for the satellite pairs, so that we do not any duplicates
-                sat_names =(self.satellites[x].get_name(), self.satellites[y].get_name())
-                if sat_names not in self.collision_sats_names_set:
-                  self.collision_sats_names_set.add(sat_names)
+                #message for if the satellites are within collision zone value km
+                if distance <= self.collision_zone:
 
-                  collision_coordinates = [self.satellites[x].get_x_position()[step],self.satellites[x].get_y_position()[step],self.satellites[x].get_z_position()[step]]
-
-                  self.collision_coordinates.append(collision_coordinates)
-                  self.collision_sats_names.append([self.satellites[x].get_name(), self.satellites[y].get_name()])
-                  self.collision_dates.append(self.closest_distance_time)
-
-              #if the distance is within the tolerance zone
-              #update the variables relating to the tolerance zone variables
-              if distance < self.tolerance_zone:
-                  
                   #create a hashset for the satellite pairs, so that we do not any duplicates
                   sat_names =(self.satellites[x].get_name(), self.satellites[y].get_name())
-                  if sat_names not in self.tolerance_sats_names_set:
-                    sat1_coord = [self.satellites[x].get_x_position()[step],self.satellites[x].get_y_position()[step],
-                    self.satellites[x].get_z_position()[step]]
+                  if sat_names not in self.collision_sats_names_set:
+                    self.collision_sats_names_set.add(sat_names)
 
-                    sat2_coord = [self.satellites[y].get_x_position()[step],self.satellites[y].get_y_position()[step],
-                    self.satellites[y].get_z_position()[step]]
+                    collision_coordinates = [self.satellites[x].get_x_position()[step],self.satellites[x].get_y_position()[step],self.satellites[x].get_z_position()[step]]
 
-                    self.tolerance_coordinates.append([sat1_coord,sat2_coord])
+                    self.collision_coordinates.append(collision_coordinates)
+                    self.collision_sats_names.append([self.satellites[x].get_name(), self.satellites[y].get_name()])
+                    self.collision_dates.append(self.closest_distance_time)
 
-                    self.tolerance_sats_names_set.add(sat_names)
-                    self.tolerance_sat_dates.append(self.closest_distance_time)
-                    self.tolerance_sats_names.append([self.satellites[x].get_name(), self.satellites[y].get_name()])
+                #if the distance is within the tolerance zone
+                #update the variables relating to the tolerance zone variables
+                if distance < self.tolerance_zone:
+                    
+                    #create a hashset for the satellite pairs, so that we do not any duplicates
+                    sat_names =(self.satellites[x].get_name(), self.satellites[y].get_name())
+                    if sat_names not in self.tolerance_sats_names_set:
+                      sat1_coord = [self.satellites[x].get_x_position()[step],self.satellites[x].get_y_position()[step],
+                      self.satellites[x].get_z_position()[step]]
+
+                      sat2_coord = [self.satellites[y].get_x_position()[step],self.satellites[y].get_y_position()[step],
+                      self.satellites[y].get_z_position()[step]]
+
+                      self.tolerance_coordinates.append([sat1_coord,sat2_coord])
+
+                      self.tolerance_sats_names_set.add(sat_names)
+                      self.tolerance_sat_dates.append(self.closest_distance_time)
+                      self.tolerance_sats_names.append([self.satellites[x].get_name(), self.satellites[y].get_name()])
 
     else:
       print("Starting Simulation")

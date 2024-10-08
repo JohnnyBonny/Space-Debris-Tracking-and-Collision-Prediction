@@ -38,6 +38,8 @@ class satellite:
   def get_times(self):
     return self.times
   
+  def set_track_time(self,value):
+    self.track_time = value
 
   def _verify_TLE_Data(self,is_file,source):
     if is_file == False:
@@ -47,46 +49,55 @@ class satellite:
         return response.text.strip().splitlines()
       else:
           print(f'The request from the url can not be met. Error {response.status_code}')
+          return 
 
     else: 
-      with open(source,'r') as file:
-        content = file.read()
-        return content.strip().splitlines()
+      try:
+        with open(source,'r') as file:
+          content = file.read()
+          return content.strip().splitlines()
+      
+      except FileNotFoundError:
+        print(f"The file does not exist for {source}")
+        return
       
   #will update the array values of x,y,z
   #steps will take list: [weeks, days, hours, minutes, seconds]
   def get_coordinates_man(self,start_date:datetime, end_date:datetime,steps:list[int]):
     tle_data = self._verify_TLE_Data(is_file=self.is_file,source=self.source)
-    if len(self.x_position) ==0:
-      # Example: Parse the TLE
-      if self.name == "":
-        self.name = tle_data[0].rstrip()
+    if tle_data is not None:
+      if len(self.x_position) ==0:
+        # Example: Parse the TLE
+        if self.name == "":
+          self.name = tle_data[0].rstrip()
 
-      satellite_line1 = tle_data[1]
-      satellite_line2 = tle_data[2]
+        satellite_line1 = tle_data[1]
+        satellite_line2 = tle_data[2]
 
-      satellite_info = Satrec.twoline2rv(satellite_line1, satellite_line2)
-      
-      #Now we will convert the dates
-      future_time = (start_date + datetime.timedelta(weeks=steps[0], days=steps[1], hours=steps[2], minutes=steps[3], seconds=steps[4]))
-      
-      while future_time < end_date:
-        if self.track_time:
-          self.times.append(future_time)
-
-        jd, fr = jday(future_time.year, future_time.month, future_time.day, future_time.hour, future_time.minute, future_time.second)
+        satellite_info = Satrec.twoline2rv(satellite_line1, satellite_line2)
         
-        e, r, v = satellite_info.sgp4(jd, fr)
-
-        # Append position data
-        self.x_position.append(r[0])
-        self.y_position.append(r[1])
-        self.z_position.append(r[2])
-
-        start_date = future_time
+        #Now we will convert the dates
         future_time = (start_date + datetime.timedelta(weeks=steps[0], days=steps[1], hours=steps[2], minutes=steps[3], seconds=steps[4]))
+        
+        while future_time < end_date:
+          if self.track_time:
+            self.times.append(future_time)
 
-      print(f"Coordinates acquired for {self.name}")
+          jd, fr = jday(future_time.year, future_time.month, future_time.day, future_time.hour, future_time.minute, future_time.second)
+          
+          e, r, v = satellite_info.sgp4(jd, fr)
+
+          # Append position data
+          self.x_position.append(r[0])
+          self.y_position.append(r[1])
+          self.z_position.append(r[2])
+
+          start_date = future_time
+          future_time = (start_date + datetime.timedelta(weeks=steps[0], days=steps[1], hours=steps[2], minutes=steps[3], seconds=steps[4]))
+
+        print(f"Coordinates acquired for {self.name}")
+      return True
+    return False  
 
   #ONLY USE THIS IF YOU ARE USING POPULATE_SAT() IN SIMULATION FILE!
   #will update the array values of x,y,z
