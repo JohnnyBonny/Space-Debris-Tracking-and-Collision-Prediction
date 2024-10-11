@@ -7,6 +7,8 @@ import numpy as np
 import requests
 import satellite
 
+#this will be used to format the julian date
+from sgp4.api import jday
 #import matplotlib.colors as mcolors
 
 #import math
@@ -55,8 +57,9 @@ class simulation:
     #a list of a tuple two sats that are within the tolerance_zone
     self.tolerance_sats_names_set = set()
 
-    self.tolerance_sat_dates = []
+    
     self.tolerance_sats_names = []
+    self.tolerance_sat_dates = []
     
     #used to check if we ran a simulation before
     self.sim_ran = False
@@ -504,4 +507,3 @@ class simulation:
 
       print(f'\nAll the sats in the tolerance zone {self.tolerance_sats_names}')
       print(f'All the dates these sats were the tolerance zone {self.tolerance_sat_dates}')
-        

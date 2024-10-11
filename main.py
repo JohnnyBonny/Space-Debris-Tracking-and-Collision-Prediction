@@ -8,9 +8,11 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+from satellite2 import satellite2
 import simulation
+import simulation2
 
-import requests
+import time
 
 #sample if you want to use a file or use a url with only 1 tle data in it
 def example1():  
@@ -59,7 +61,24 @@ def example1():
 
   sim.start_simulation_no_plot()
   sim.print_info()
-  sim.start_simulation_plot()
+
+
+  #new method
+  #a source can be a file or URL.
+  Iridium_deb = satellite2(source=Iridium_deb_file)
+
+  Cosmos_deb = satellite2(source=Cosmos_deb_file) 
+
+  Sat_174E = satellite2(source=Sat_174E_file) 
+  
+  CALSPHERE_1= satellite2(source=CALSPHERE_1_file) 
+
+  satellites = [Iridium_deb,Cosmos_deb,Sat_174E,CALSPHERE_1]
+
+  sim2 = simulation2.simulation2(satellites,tolerance_zone,collision_zone,start_date,end_date,increments,playback_speed,repeat)
+
+  sim2.start_simulation_no_plot_update()
+  sim2.print_info()
 
 #sample on how sim from a url with many satellites
 def example2():
@@ -94,9 +113,9 @@ def example2():
   sim.start_simulation_no_plot()
 
   sim.print_info()
-  sim.start_simulation_plot()
+  #sim.start_simulation_plot()
 
-  sim.print_info()
+  #sim.print_info()
 
 #sample of what happens if satellites collides
 def example3():
@@ -200,10 +219,52 @@ def example4():
   print(f'sim.get_tolerance_sat_dates():{sim.get_tolerance_sat_dates()}')#the datetime of the two satellites when they are within the tolerance zone
   print(f'sim.get_tolerance_sat_names():{sim.get_tolerance_sats_names()}')#the names of the two satellites when they arewithin the tolerance zone
 
+def example5():
+
+  #link to active satellites
+  url = 'https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle'
+
+  start_year = 2024
+  start_month = 9
+  start_day = 30
+
+  end_year = 2024
+  end_month = 10
+  end_day = 5
+
+  start_date = datetime(start_year,start_month,start_day, tzinfo=timezone.utc)
+  end_date = datetime(end_year,end_month,end_day, tzinfo=timezone.utc)
+
+  #increments =  [weeks, days, hours, minutes, seconds]
+  increments = [0,0,0,3,0] #this will get coordinates every 3 mins
+  playback_speed = 5 #frames will update every 5 ms
+  repeat = False #repeat the simulation when completed
+  tolerance_zone = 100  #Warning message if two satellites are closer than this value(km)
+  collision_zone = 5 #Collision message if two satellites are closer than this value(km)
+  repeat = False
+
+  #initializing the simulation
+  sim  = simulation2.simulation2([],tolerance_zone,collision_zone,start_date,end_date,increments,playback_speed,repeat)
+
+  sim.populate_satellites(url,50) # this will grab 50 satellites from the url
+
+  sim.start_simulation_no_plot_update()
+
+  sim.print_info()
+
+
 def main():
-  example4()
+  start_time = time.time()
+  example5()
+  end_time = time.time()
+  elapsed_time = end_time - start_time
+  print(f"{elapsed_time} of example 5")
 
-
+  start_time = time.time()
+  example2()
+  end_time = time.time()
+  elapsed_time = end_time - start_time
+  print(f"{elapsed_time} of example 2")
   
 
 if __name__ == "__main__":

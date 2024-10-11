@@ -1,6 +1,6 @@
 import datetime
 import requests
-
+import validators
 #this will be used to parse the data
 from sgp4.api import Satrec
 
@@ -20,6 +20,8 @@ class satellite:
 
     #records all the dates and times of our simulation
     self.times = []
+
+    self.lines = []
 
     
 
@@ -41,7 +43,7 @@ class satellite:
   def set_track_time(self,value):
     self.track_time = value
 
-  def _verify_TLE_Data(self,is_file,source):
+  def _Get_TLE_Data(self,is_file,source):
     if is_file == False:
       response = requests.get(source)
       if response.status_code == 200:
@@ -64,7 +66,7 @@ class satellite:
   #will update the array values of x,y,z
   #steps will take list: [weeks, days, hours, minutes, seconds]
   def get_coordinates_man(self,start_date:datetime, end_date:datetime,steps:list[int]):
-    tle_data = self._verify_TLE_Data(is_file=self.is_file,source=self.source)
+    tle_data = self._Get_TLE_Data(is_file=self.is_file,source=self.source)
     if tle_data is not None:
       if len(self.x_position) ==0:
         # Example: Parse the TLE
@@ -136,7 +138,64 @@ class satellite:
         future_time = (start_date + datetime.timedelta(weeks=steps[0], days=steps[1], hours=steps[2], minutes=steps[3], seconds=steps[4]))
 
       print(f"Coordinates acquired for {self.name}. Number:{i/3}")
+  
+  def validate_TLE_Data_update(self):
+    #if it a url,parse the url
+    if validators.url(self.source):
+      response = requests.get(self.source)
+      if response.status_code == 200:
+        print("request successful")
+        self.lines = response.text.strip().splitlines()
+      else:
+          print(f'The request from the url can not be met. Error {response.status_code}')
+           
+    else: 
+      try:
+        with open(self.source,'r') as file:
+          content = file.read()
+          self.lines = content.strip().splitlines()
+      
+      except FileNotFoundError:
+        print(f"The file does not exist for {self.source}")
+        
 
+      
+  def get_coordinates(self,index:int,jd:float,fr:float):
+      #if there are coordinates in the list, clear them
+        self.x_position.clear()
+        self.y_position.clear()
+        self.z_position.clear()
+      #if the source has already been verified, then we will skip the verification process
+        if len(self.lines) == 0:
+          self.validate_TLE_Data_update()
+
+      #once verified, we will now get the coordinates
+        if len(self.lines) != 0:
+
+          #get tle data and pass in a index variable to get the specific lines of the for the satellite
+          # Example: Parse the TLE
+          if self.name == "":
+            self.name = self.lines[index].rstrip()
+
+          satellite_line1 = self.lines[index+1]
+          satellite_line2 = self.lines[index+2]
+
+          satellite_info = Satrec.twoline2rv(satellite_line1, satellite_line2)
+
+          e, r, v = satellite_info.sgp4(jd, fr)
+
+          #get the coordinates from the date and store them into the coordinates variable
+          # Append position data
+          self.x_position.append(r[0])
+          self.y_position.append(r[1])
+          self.z_position.append(r[2])
+
+          return True
+        return False  
+
+      
+
+      #get the coordinates from the date and store them into the coordinates variable
 
     
 
