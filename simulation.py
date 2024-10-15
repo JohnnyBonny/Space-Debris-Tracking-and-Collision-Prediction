@@ -223,18 +223,18 @@ class simulation:
               self.collision_sats_names.append([self.satellites[x].get_name(), self.satellites[y].get_name()])
               self.collision_dates.append(self.closest_distance_time)
 
-          self.collision_status_text.set_text(f"Collision(within {self.collision_zone}km of each) has been detected")
-          self.collision_status_text.set_color('red')
+              self.collision_status_text.set_text(f"Collision(within {self.collision_zone}km of each) has been detected")
+              self.collision_status_text.set_color('red')
 
-          self.collision_sat_text.set_text(f"Most recent collision:{self.satellites[x].get_name()} and {self.satellites[y].get_name()} ")
-          self.collision_time_text.set_text(f"At {self.closest_distance_time}UTC")
-          
-          self.collision_coord_top_text.set_text(f'Collision is at(TEME reference frame):')
-          self.collision_coord_bottom_text.set_text(f'x: {self.satellites[x].get_x_position()[end_index]:.2f} y: {self.satellites[x].get_y_position()[end_index]:.2f} z: {self.satellites[x].get_z_position()[end_index]:.2f}')
+              self.collision_sat_text.set_text(f"Most recent collision:{self.satellites[x].get_name()} and {self.satellites[y].get_name()} ")
+              self.collision_time_text.set_text(f"At {self.closest_distance_time}UTC")
+              
+              self.collision_coord_top_text.set_text(f'Collision is at(TEME reference frame):')
+              self.collision_coord_bottom_text.set_text(f'x: {self.satellites[x].get_x_position()[end_index]:.2f} y: {self.satellites[x].get_y_position()[end_index]:.2f} z: {self.satellites[x].get_z_position()[end_index]:.2f}')
 
-          #plot the collision
-          ax.scatter(self.satellites[x].get_x_position()[end_index],self.satellites[x].get_y_position()[end_index],self.satellites[x].get_z_position()[end_index],color='red')
-          ax.scatter(self.satellites[y].get_x_position()[end_index],self.satellites[y].get_y_position()[end_index],self.satellites[y].get_z_position()[end_index],color='red')
+              #plot the collision
+              ax.scatter(self.satellites[x].get_x_position()[end_index],self.satellites[x].get_y_position()[end_index],self.satellites[x].get_z_position()[end_index],color='red')
+              ax.scatter(self.satellites[y].get_x_position()[end_index],self.satellites[y].get_y_position()[end_index],self.satellites[y].get_z_position()[end_index],color='red')
 
 
         if distance < self.tolerance_zone:

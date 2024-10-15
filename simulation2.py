@@ -70,6 +70,11 @@ class simulation2:
 
     self.pop_sat = False
 
+    self.frames = 0
+
+    self.datetimes =[]
+
+    self.trackDateTimes = False
 
     #--------------Text for 3D window---------------------------
     #the text so show the current time
@@ -269,6 +274,46 @@ class simulation2:
       ax.scatter(self.sat2_coordinates[0],self.sat2_coordinates[1],self.sat2_coordinates[2],color='orange')
     return lines,
 
+  def update_data_2_0(self,frames,lines,ax):
+    start_index = max(0,frames-3) #frames - 3 means we are only getting 4 points at a time
+    end_index = frames + 1
+
+
+    datetime_obj = self.datetimes[end_index]
+
+    # Format it to show only month, day, year, hour, and minute
+    formatted_time = datetime_obj.strftime('%m-%d-%Y %H:%M')
+    self.current_time_text.set_text("current time: " + formatted_time + " UTC")  # Update the existing text object
+    
+    points = []
+    for index,satellite in enumerate(self.satellites):
+      x_positions = []
+      y_positions = []
+      z_positions = []
+      for days in range(start_index,end_index+1):
+        jd, fr = jday(self.datetimes[days].year, self.datetimes[days].month, self.datetimes[days].day, self.datetimes[days].hour, self.datetimes[days].minute, self.datetimes[days].second)
+        satellite.get_coordinates(jd,fr)
+        x_positions.append(satellite.get_x_position())
+        y_positions.append(satellite.get_y_position())
+        z_positions.append(satellite.get_z_position())
+
+      #we are only grabbing the end_index because we want the most recent data
+      lines[index].set_data(x_positions[:],y_positions[:])
+      lines[index].set_3d_properties(z_positions[:])  # Set the Z data for 3D
+      points.append(np.array([x_positions[-1], y_positions[-1], z_positions[-1]]))
+
+    
+    self.point_calculations_animation(datetime_obj,points,ax)
+
+            
+    #if we are on the very last frame put the points of the two satellites that were the closest to each other
+    if frames == self.frames-2:
+      
+      ax.scatter(self.sat1_coordinates[0],self.sat1_coordinates[1],self.sat1_coordinates[2],color='orange')
+      ax.scatter(self.sat2_coordinates[0],self.sat2_coordinates[1],self.sat2_coordinates[2],color='orange')
+
+    return lines,
+  
   #only for when there are more than 1 in the url
   def populate_satellites(self,url, number_sats):
     lines = []
@@ -306,7 +351,7 @@ class simulation2:
     while i < number_sats * 3:
       s1 = satellite2.satellite2('')
       s1.set_name(f"{lines[i]}")
-      print(f"Placed satellite named {s1.get_name()} into the list. Number{i/3}")
+      print(f"Placed satellite named {s1.get_name()} into the list. Number{(i/3) + 1}")
       s1.set_lines(lines[i:i+4])
 
       self.satellites.append(s1)
@@ -334,34 +379,23 @@ class simulation2:
     
 
     if self.validate_sim_date(self.start_date,self.end_date,self.increments) == True:
-      for index,satellite in enumerate(self.satellites):
-      
-        #if we never got the coordinates for the satellites, then we must get them now
-        if self.got_coordinates == False:
-          valid_satellite = satellite.get_coordinates_man(self.start_date,self.end_date,self.increments)
 
-          if valid_satellite == True:
-            #the plot variable is a 2D line with 3 positions(x,y,z)
-            plot, = ax.plot([],[],[],color = 'r',linewidth=2)
+      #verify if the satellite data can be obtained
+      for satellite in self.satellites:
+        jd, fr = jday(self.start_date.year, self.start_date.month, self.start_date.day, self.start_date.hour, self.start_date.minute, self.start_date.second)
 
-            #the plot variables will tell the program the position to draw the line
-            lines.append(plot)
-            self.got_coordinates = True
-          else:
-            #if the first satellite can not be accessed, delete it and make the next satellite track the time
-            if index == 0:
-              self.satellites[index+1].set_track_time(True)
-              
-            self.satellites.remove(satellite)
 
+        valid_satellite = satellite.get_coordinates(jd,fr)
+
+        if valid_satellite == True:
+          #the plot variable is a 2D line with 3 positions(x,y,z)
+          plot, = ax.plot([],[],[],color = 'r',linewidth=2)
+
+          #the plot variables will tell the program the position to draw the line
+          lines.append(plot)
         else:
-            #the plot variable is a 2D line with 3 positions(x,y,z)
-            plot, = ax.plot([],[],[],color = 'r',linewidth=2)
+          self.satellites.remove(satellite)
 
-            #the plot variables will tell the program the position to draw the line
-            lines.append(plot)
-
-      
 
       # Plot the Earth as a blue sphere
       earth_radius = 6371  # Earth's radius in km
@@ -377,8 +411,20 @@ class simulation2:
       z_earth = earth_radius * np.outer(np.ones(np.size(u)), np.cos(v))
       ax.plot_surface(x_earth, y_earth, z_earth, color='blue', alpha=0.6)
       #sphere reference: YouTube, YouTube, www.youtube.com/watch?v=DV4GjHH-fvc&t=32s. Accessed 6 Oct. 2024. 
+    
       
-      animation = FuncAnimation(fig=fig,func=self.update_data,frames=len(self.satellites[0].get_x_position())-1,interval=self.playback_speed,fargs=(lines,ax,),repeat= self.repeat)
+      if self.frames == 0:
+        #we have to calulate how many frames we need to do the animations
+        future_time = (self.start_date + datetime.timedelta(weeks=self.increments[0], days=self.increments[1], hours=self.increments[2], minutes=self.increments[3], seconds=self.increments[4]))
+        self.datetimes.append(self.start_date)
+        while future_time < self.end_date:
+          
+          self.frames += 1
+          self.datetimes.append(future_time)
+          start_date = future_time
+          future_time = (start_date + datetime.timedelta(weeks=self.increments[0], days=self.increments[1], hours=self.increments[2], minutes=self.increments[3], seconds=self.increments[4]))
+
+      animation = FuncAnimation(fig=fig,func=self.update_data_2_0,frames=self.frames,interval=self.playback_speed,fargs=(lines,ax,),repeat= self.repeat)
 
       
       # Show the updated plot with the Earth
@@ -467,6 +513,86 @@ class simulation2:
               self.tolerance_sats_names_set.add(sat_names)
               self.tolerance_sat_dates.append(self.closest_distance_time)
               self.tolerance_sats_names.append([self.satellites[x].get_name(), self.satellites[y].get_name()])
+  
+
+  def point_calculations_animation(self, date ,points:list,ax):
+    #calculate the distance between each point in the current step 
+    for x in range(len(points)):
+      for y in range(x+1,len(points)):
+
+        #The Euclidean distance formula
+        distance = abs(np.linalg.norm(points[y] - points[x])) #Source: “Calculate the Euclidean Distance Using NumPy.” GeeksforGeeks, GeeksforGeeks, 30 July 2024, www.geeksforgeeks.org/calculate-the-euclidean-distance-using-numpy/. 
+
+        if distance < self.closest_distance_value:
+
+          distance = float(f"{distance:.2f}")
+          self.closest_distance_value = distance
+          self.closest_distance_time = date 
+
+          self.closest_dist_text.set_text(f'The closest distance between the two objects is {self.closest_distance_value}km')
+          self.closest_time_text.set_text(f'This occured on {self.closest_distance_time}UTC')
+          self.closest_sats_text.set_text(f'between {self.satellites[x].get_name()} and {self.satellites[y].get_name()}')
+
+          #update the values
+          self.sat1_coordinates = [self.satellites[x].get_x_position(), self.satellites[x].get_y_position(),self.satellites[x].get_z_position()]
+
+          self.sat2_coordinates = [self.satellites[y].get_x_position(), self.satellites[y].get_y_position(),self.satellites[y].get_z_position()]
+
+          self.sat1_name = self.satellites[x].get_name()
+          self.sat2_name = self.satellites[y].get_name()
+          
+          self.sat1_coord_text.set_text(f'{self.satellites[x].get_name()}: ({self.satellites[x].get_x_position():.2f}, {self.satellites[x].get_y_position():.2f}, {self.satellites[x].get_z_position():.2f})')
+
+          self.sat2_coord_text.set_text(f'{self.satellites[y].get_name()}: ({self.satellites[y].get_x_position():.2f}, {self.satellites[y].get_y_position():.2f}, {self.satellites[y].get_z_position():.2f})')
+
+        #message for if the satellites are within collision zone value km
+        if distance <= self.collision_zone:
+          
+          #create a hashset for the satellite pairs, so that we do not any duplicates
+          sat_names =(self.satellites[x].get_name(), self.satellites[y].get_name())
+          if sat_names not in self.collision_sats_names_set:
+            self.collision_sats_names_set.add(sat_names)
+
+            collision_coordinates = [self.satellites[x].get_x_position(),self.satellites[x].get_y_position(),self.satellites[x].get_z_position()]
+
+            self.collision_coordinates.append(collision_coordinates)
+            self.collision_sats_names.append([self.satellites[x].get_name(), self.satellites[y].get_name()])
+            self.collision_dates.append(self.closest_distance_time)
+          
+          self.collision_status_text.set_text(f"Collision(within {self.collision_zone}km of each) has been detected")
+          self.collision_status_text.set_color('red')
+
+          self.collision_sat_text.set_text(f"Most recent collision:{self.satellites[x].get_name()} and {self.satellites[y].get_name()} ")
+          self.collision_time_text.set_text(f"At {self.closest_distance_time}UTC")
+          
+          self.collision_coord_top_text.set_text(f'Collision is at(TEME reference frame):')
+          self.collision_coord_bottom_text.set_text(f'x: {self.satellites[x].get_x_position():.2f} y: {self.satellites[x].get_y_position():.2f} z: {self.satellites[x].get_z_position():.2f}')
+
+          #plot the collision
+          ax.scatter(self.satellites[x].get_x_position(),self.satellites[x].get_y_position(),self.satellites[x].get_z_position(),color='red')
+          ax.scatter(self.satellites[y].get_x_position(),self.satellites[y].get_y_position(),self.satellites[y].get_z_position(),color='red')
+
+        #if the distance is within the tolerance zone
+        #update the variables relating to the tolerance zone variables
+        if distance < self.tolerance_zone:
+            self.tolerance_text.set_text(f'WARNING! WITHIN TOLERANCE ZONE OF {self.tolerance_zone}KM')
+            self.tolerance_text.set_color('red')
+
+            #create a hashset for the satellite pairs, so that we do not any duplicates
+            sat_names =(self.satellites[x].get_name(), self.satellites[y].get_name())
+            if sat_names not in self.tolerance_sats_names_set:
+              sat1_coord = [self.satellites[x].get_x_position(),self.satellites[x].get_y_position(),
+              self.satellites[x].get_z_position()]
+
+              sat2_coord = [self.satellites[y].get_x_position(),self.satellites[y].get_y_position(),
+              self.satellites[y].get_z_position()]
+
+              self.tolerance_coordinates.append([sat1_coord,sat2_coord])
+
+              self.tolerance_sats_names_set.add(sat_names)
+              self.tolerance_sat_dates.append(self.closest_distance_time)
+              self.tolerance_sats_names.append([self.satellites[x].get_name(), self.satellites[y].get_name()])
+
 
   def start_simulation_no_plot_update(self):
     if len(self.satellites) == 0:
@@ -484,10 +610,20 @@ class simulation2:
 
         #Now we will convert the dates
         future_time = (self.start_date + datetime.timedelta(weeks=self.increments[0], days=self.increments[1], hours=self.increments[2], minutes=self.increments[3], seconds=self.increments[4]))
-        
+
+        if self.frames != 0:
+          self.frames = 0
+
+        if len(self.datetimes) == 0:
+            self.datetimes.append(self.start_date)
+
         while future_time < self.end_date:
           points = []
+          self.frames += 1
           
+          if self.trackDateTimes == False:
+            self.datetimes.append(future_time)
+
           for satellite in self.satellites:
             jd, fr = jday(future_time.year, future_time.month, future_time.day, future_time.hour, future_time.minute, future_time.second)
 
@@ -502,6 +638,8 @@ class simulation2:
 
           start_date = future_time
           future_time = (start_date + datetime.timedelta(weeks=self.increments[0], days=self.increments[1], hours=self.increments[2], minutes=self.increments[3], seconds=self.increments[4]))
+        
+        self.trackDateTimes = False
 
 
         

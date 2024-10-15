@@ -11,9 +11,9 @@ class satellite2:
   def __init__(self, source):
     self.source = source
     self.name = ""
-    self.x_position = []
-    self.y_position = []
-    self.z_position = []
+    self.x_position = 0
+    self.y_position = 0
+    self.z_position = 0
 
     #represents the file or url being split into many lines
     self.lines = []
@@ -63,13 +63,13 @@ class satellite2:
 
       
   def get_coordinates(self,jd:float,fr:float):
-      #if there are coordinates in the list, clear them
-        self.x_position.clear()
-        self.y_position.clear()
-        self.z_position.clear()
+
       #if the source has already been verified, then we will skip the verification process
         if len(self.lines) == 0:
           self.validate_TLE_Data()
+        
+        if len(self.lines) == 0:
+          return False
 
       #once verified, we will now get the coordinates
         if len(self.lines) != 0:
@@ -88,13 +88,11 @@ class satellite2:
 
           #get the coordinates from the date and store them into the coordinates variable
           # Append position data
-          self.x_position.append(r[0])
-          self.y_position.append(r[1])
-          self.z_position.append(r[2]) 
-
-      
-
-      #get the coordinates from the date and store them into the coordinates variable
+          self.x_position = r[0]
+          self.y_position = r[1]
+          self.z_position = r[2] 
+        
+        return True
 
     
 

@@ -63,6 +63,7 @@ def example1():
   sim.print_info()
 
 
+
   #new method
   #a source can be a file or URL.
   Iridium_deb = satellite2(source=Iridium_deb_file)
@@ -248,12 +249,16 @@ def example5():
 
   sim.populate_satellites(url,50) # this will grab 50 satellites from the url
 
-  sim.start_simulation_no_plot_update()
+  #sim.start_simulation_no_plot_update()
+  
+  #sim.print_info()
+  
+  sim.start_simulation_plot()
 
   sim.print_info()
 
-
-def main():
+#show the difference between the two different implementations of the sat and sim classes using the populate
+def example6():
   start_time = time.time()
   example5()
   end_time = time.time()
@@ -265,6 +270,11 @@ def main():
   end_time = time.time()
   elapsed_time = end_time - start_time
   print(f"{elapsed_time} of example 2")
+
+def main():
+  example5()
+
+
   
 
 if __name__ == "__main__":
